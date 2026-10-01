@@ -1,0 +1,257 @@
+# =====================================================================
+# E-Commerce Order Management & Search Service
+#
+# Polyglot persistence demo:
+#   MongoDB (catalog)  +  PostgreSQL (source of truth for orders)
+#   PostgreSQL -> RabbitMQ -> Celery -> Elasticsearch (search/analytics)
+#
+# Usage:
+#   cp .env.example .env
+#   docker compose up -d --build
+# =====================================================================
+name: ecommerce-orders
+
+x-backend-environment: &backend-environment
+  # In-network service endpoints (override the localhost defaults from .env)
+  POSTGRES_HOST: postgres
+  # Inside the compose network the container port is always the default one,
+  # regardless of which host port was published.
+  POSTGRES_PORT: 5432
+  MONGO_URI: mongodb://mongodb:27017
+  ELASTICSEARCH_URL: http://elasticsearch:9200
+  RABBITMQ_HOST: rabbitmq
+  RABBITMQ_URL: amqp://${RABBITMQ_DEFAULT_USER:-ecommerce}:${RABBITMQ_DEFAULT_PASSWORD:-change_me_rabbit}@rabbitmq:5672//
+  LOG_LEVEL: ${LOG_LEVEL:-INFO}
+  ENVIRONMENT: ${ENVIRONMENT:-development}
+
+services:
+  # ------------------------------------------------------------------
+  # Infrastructure
+  # ------------------------------------------------------------------
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-ecommerce}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-change_me_postgres}
+      POSTGRES_DB: ${POSTGRES_DB:-ecommerce}
+      TZ: UTC
+      PGTZ: UTC
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-ecommerce} -d ${POSTGRES_DB:-ecommerce}"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+      start_period: 10s
+    networks: [app_net]
+
+  mongodb:
+    image: mongo:7
+    restart: unless-stopped
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodb_data:/data/db
+    healthcheck:
+      test: ["CMD", "mongosh", "--quiet", "--eval", "db.adminCommand('ping').ok"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+      start_period: 10s
+    networks: [app_net]
+
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.15.3
+    restart: unless-stopped
+    environment:
+      discovery.type: single-node
+      xpack.security.enabled: "false"
+      xpack.security.http.ssl.enabled: "false"
+      xpack.security.transport.ssl.enabled: "false"
+      ES_JAVA_OPTS: "${ES_JAVA_OPTS:--Xms512m -Xmx512m}"
+      cluster.routing.allocation.disk.watermark.low: 95%
+      cluster.routing.allocation.disk.watermark.high: 98%
+      cluster.routing.allocation.disk.watermark.flood_stage: 98%
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+    ports:
+      - "${ELASTICSEARCH_PORT:-9200}:9200"
+    volumes:
+      - elasticsearch_data:/usr/share/elasticsearch/data
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://localhost:9200/_cluster/health?wait_for_status=yellow&timeout=5s >/dev/null || exit 1"]
+      interval: 10s
+      timeout: 10s
+      retries: 20
+      start_period: 30s
+    networks: [app_net]
+
+  rabbitmq:
+    image: rabbitmq:3.13-management-alpine
+    restart: unless-stopped
+    environment:
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_DEFAULT_USER:-ecommerce}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_DEFAULT_PASSWORD:-change_me_rabbit}
+    ports:
+      - "${RABBITMQ_PORT:-5672}:5672"
+      - "${RABBITMQ_MGMT_PORT:-15672}:15672"
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 5s
+      timeout: 10s
+      retries: 12
+      start_period: 15s
+    networks: [app_net]
+
+  # ------------------------------------------------------------------
+  # Application
+  # ------------------------------------------------------------------
+  backend:
+    build:
+      context: ./backend
+      target: dev
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      <<: *backend-environment
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+    ports:
+      - "${API_PORT:-8000}:8000"
+    volumes:
+      - ./backend:/app
+    depends_on:
+      postgres:
+        condition: service_healthy
+      mongodb:
+        condition: service_healthy
+      elasticsearch:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "python -c \"import urllib.request,sys; sys.exit(0 if urllib.request.urlopen('http://localhost:8000/api/health', timeout=3).status == 200 else 1)\""]
+      interval: 10s
+      timeout: 10s
+      retries: 12
+      start_period: 20s
+    networks: [app_net]
+
+  celery-worker:
+    build:
+      context: ./backend
+      target: dev
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      <<: *backend-environment
+    command: celery -A app.tasks.celery_app worker --loglevel=INFO --concurrency=2
+    volumes:
+      - ./backend:/app
+    depends_on:
+      postgres:
+        condition: service_healthy
+      elasticsearch:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "celery -A app.tasks.celery_app inspect ping -d celery@$$HOSTNAME --timeout 10 2>/dev/null | grep -q pong"]
+      interval: 30s
+      timeout: 15s
+      retries: 5
+      start_period: 25s
+    networks: [app_net]
+
+  frontend:
+    build:
+      context: ./frontend
+      target: dev
+    restart: unless-stopped
+    environment:
+      VITE_API_BASE_URL: ${VITE_API_BASE_URL:-http://localhost:8000}
+      # Vite dev-server proxy target for relative /api calls (in-network name).
+      VITE_PROXY_TARGET: http://backend:8000
+    command: npm run dev -- --host 0.0.0.0 --port 5173
+    ports:
+      - "5173:5173"
+    volumes:
+      - ./frontend:/app
+      - frontend_node_modules:/app/node_modules
+    depends_on:
+      backend:
+        condition: service_healthy
+    networks: [app_net]
+
+  # ------------------------------------------------------------------
+  # Production-style static frontend (nginx).  Opt-in:  --profile prod
+  #   docker compose --profile prod up -d --build frontend-prod
+  #   → http://localhost:8080
+  # ------------------------------------------------------------------
+  frontend-prod:
+    build:
+      context: ./frontend
+      target: prod
+    restart: unless-stopped
+    profiles: ["prod"]
+    ports:
+      - "${WEB_PORT:-8080}:80"
+    networks: [app_net]
+    depends_on:
+      backend:
+        condition: service_healthy
+
+  # ------------------------------------------------------------------
+  # One-shot helpers:  docker compose run --rm seed / reindex
+  # ------------------------------------------------------------------
+  seed:
+    build:
+      context: ./backend
+      target: dev
+    env_file: .env
+    environment:
+      <<: *backend-environment
+    profiles: ["tools"]
+    command: python -m scripts.seed
+    networks: [app_net]
+    depends_on:
+      postgres:
+        condition: service_healthy
+      mongodb:
+        condition: service_healthy
+      elasticsearch:
+        condition: service_healthy
+
+  reindex:
+    build:
+      context: ./backend
+      target: dev
+    env_file: .env
+    environment:
+      <<: *backend-environment
+    profiles: ["tools"]
+    command: python -m scripts.reindex_orders --recreate
+    networks: [app_net]
+    depends_on:
+      postgres:
+        condition: service_healthy
+      elasticsearch:
+        condition: service_healthy
+
+networks:
+  app_net:
+    driver: bridge
+
+volumes:
+  postgres_data:
+  mongodb_data:
+  elasticsearch_data:
+  rabbitmq_data:
+  frontend_node_modules:

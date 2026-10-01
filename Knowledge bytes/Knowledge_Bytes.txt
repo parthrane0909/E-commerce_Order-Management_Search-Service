@@ -1,0 +1,1078 @@
+Byte 1: What This Project Is — The Business Problem
+Builds on: None — starting point
+In plain terms:
+This is a polyglot persistence e-commerce demo that demonstrates how different databases serve different purposes in a real-world order management system. It's not a production shop — it's a reference implementation showing how to properly separate concerns across MongoDB (catalog), PostgreSQL (orders), and Elasticsearch (search/analytics) with asynchronous synchronization via RabbitMQ and Celery.
+Why it exists:
+The project solves the problem of data ownership confusion in e-commerce systems. Most applications incorrectly use a single database for everything, leading to:
+- Catalog changes corrupting historical order data
+- Search performance degrading transactional writes
+- No clear source of truth for financial records
+This project demonstrates the correct pattern: each database owns exactly one domain, with a clear synchronization path for derived data.
+The three user roles:
+1. Customer — browses MongoDB catalog, adds to cart, places orders (PostgreSQL)
+2. Admin — searches/analyzes orders in Elasticsearch dashboard, manages MongoDB catalog
+3. System — Celery worker synchronizes PostgreSQL → Elasticsearch via RabbitMQ
+Byte 2: Complete Architecture Diagram
+Builds on: Byte 1
+In plain terms:
+The system follows a strict polyglot persistence architecture where each database owns exactly one domain. No database crosses its boundaries.
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                              FRONTEND (Vue 3 + Vite)                        │
+│  ┌──────────────────┐      ┌─────────────────────┐      ┌───────────────┐  │
+│  │  Storefront      │      │  Admin Dashboard    │      │  Login/Auth   │  │
+│  │  (Customer)      │      │  (Admin Only)       │      │  (JWT)        │  │
+│  └────────┬─────────┘      └──────────┬──────────┘      └───────┬───────┘  │
+└───────────│───────────────────────────│─────────────────────────│──────────┘
+            │                           │                         │
+            ▼                           ▼                         ▼
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                              FASTAPI BACKEND (Port 8000)                    │
+│  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐    │
+│  │ /api/products│  │  /api/orders │  │ /api/search  │  │ /api/auth    │    │
+│  │  (MongoDB)   │  │ (PostgreSQL) │  │ (Elasticsearch)│ │  (JWT)       │    │
+│  └──────┬───────┘  └──────┬───────┘  └──────┬───────┘  └──────┬───────┘    │
+└─────────│──────────────────│─────────────────│─────────────────│────────────┘
+          │                  │                 │                 │
+          ▼                  ▼                 ▲                 │
+┌─────────────────────┐ ┌──────────────────┐ │ ┌─────────────────────────┐
+│    MONGODB          │ │  POSTGRESQL      │ │ │       RABBITMQ          │
+│    (Port 27017)     │ │  (Port 5432)     │ │ │   (Port 5672/15672)     │
+│                     │ │                  │ │ │                         │
+│  products collection│ │  users table     │ │ │  Queue: orders_sync     │
+│  - title, price     │ │  orders table    │ │ │                         │
+│  - category, tags   │ │  order_items     │ │ │  Publisher: API         │
+│  - tags, variants   │ │  (snapshot)      │ │ │  Consumer: Celery       │
+│  - attributes       │ │                  │ │ │                         │
+└─────────────────────┘ └────────┬─────────┘ └──────────────┬────────────┘
+                                 │                            │
+                                 ▼                            ▼
+                        ┌─────────────────────────────────────────────────┐
+                        │              CELERY WORKER                      │
+                        │  (Concurrency=2, Queue: orders_sync)            │
+                        │                                                 │
+                        │  Task: sync_order_to_elasticsearch             │
+                        │  - Reads order from PostgreSQL                 │
+                        │  - Builds ES document                          │
+                        │  - Indexes into Elasticsearch                  │
+                        │  - Retries with exponential backoff            │
+                        └───────────────────┬─────────────────────────────┘
+                                          │
+                                          ▼
+                        ┌─────────────────────────────────────┐
+                        │        ELASTICSEARCH                  │
+                        │   (Port 9200, Index: orders)          │
+                        │                                       │
+                        │  order documents with:                │
+                        │  - customer.name/email (search_as_    │
+                        │    you_type for prefix matching)      │
+                        │  - items.title (nested, search_as_    │
+                        │    you_type)                          │
+                        │  - status, dates, amounts             │
+                        │  - Aggregations: revenue, status counts│
+                        └───────────────────────────────────────┘
+Key architectural rules enforced:
+Rule	Enforcement
+MongoDB owns products only	Orders never read from MongoDB
+PostgreSQL owns orders only	Orders never written to MongoDB/ES directly
+Elasticsearch is read-only for orders	Admin search only; never source of truth
+Sync is async, one-way	PostgreSQL → RabbitMQ → Celery → Elasticsearch
+Order snapshots are immutable	OrderItems store title/price at purchase time
+Byte 3: Technology Stack — Why Each Exists
+Builds on: Byte 2
+In plain terms:
+Every technology in this stack was chosen for a specific architectural reason. None are arbitrary.
+Technology	Role in THIS Project	Why Not Alternative
+Python 3.11	Backend language	Type hints, async support, rich ecosystem for data
+FastAPI	REST API framework	Auto OpenAPI, Pydantic validation, async native
+Uvicorn	ASGI server	Fast, production-ready, works with FastAPI
+PostgreSQL 16	Orders, users, auth (source of truth)	ACID transactions, relational integrity, numeric precision for money
+MongoDB 7	Product catalog	Flexible schema for variants/attributes, text search
+Elasticsearch 8.15	Order search/analytics	Full-text, prefix matching, nested queries, aggregations
+RabbitMQ 3.13	Message broker	Durable queues, publisher confirms, retry via DLX
+Celery 5.4	Distributed task queue	Retries, backoff, concurrency control, idempotent tasks
+SQLAlchemy 2.0	PostgreSQL ORM	AsyncSession, typed models, explicit transactions
+PyMongo	MongoDB driver	Native async not needed (sync is fine for catalog)
+Elasticsearch-py	ES client	Official client, supports search_as_you_type
+Vue 3 + Vite	Frontend SPA	Composition API, fast HMR, tree-shaking
+Pinia	State management	Simpler than Vuex, TypeScript-friendly
+Vue Router	SPA routing	Navigation guards for auth/admin
+Axios	HTTP client	Interceptors for auth, error normalization
+JWT (python-jose)	Stateless auth	No server sessions, scales horizontally
+bcrypt (passlib)	Password hashing	Industry standard, configurable cost
+Pydantic v2	Validation/serialization	Fast, strict, OpenAPI integration
+Docker Compose	Local orchestration	All infra as code, reproducible
+Pytest / Vitest	Testing	Unit + integration, fixtures for infra
+Why these specific combinations:
+- PostgreSQL + MongoDB = Relational integrity for money + flexible catalog
+- Elasticsearch only for admin search = Customers search MongoDB directly
+- RabbitMQ + Celery = Decouples write latency from search indexing
+- JWT + bcrypt = No session store needed, works across containers
+- PostgreSQL numeric(12,2) = Exact money math, no floating point errors
+Byte 4: Project Directory Tour
+Builds on: Byte 3
+In plain terms:
+The repository follows a clean separation between backend, frontend, infrastructure, and tests.
+ecommerce-orders/
+├── backend/                    # FastAPI application
+│   ├── app/
+│   │   ├── api/               # HTTP endpoints (routes)
+│   │   │   ├── auth.py        # Login, logout, /me
+│   │   │   ├── health.py      # /api/health
+│   │   │   ├── orders.py      # POST /orders, GET /orders/{id}, PATCH /orders/{id}/status
+│   │   │   ├── products.py    # Catalog CRUD, facets
+│   │   │   ├── search.py      # POST /api/search/orders (admin only)
+│   │   │   └── users.py       # GET /api/users (list customers)
+│   │   ├── api/__init__.py
+│   │   ├── clients/           # External service clients
+│   │   │   ├── elasticsearch.py
+│   │   │   ├── mongodb.py
+│   │   │   └── rabbitmq.py
+│   │   ├── core/              # Cross-cutting concerns
+│   │   │   ├── auth.py        # JWT, bcrypt, deps
+│   │   │   ├── config.py      # Pydantic Settings
+│   │   │   ├── database.py    # SQLAlchemy engine/session
+│   │   │   ├── errors.py      # AppError + handlers
+│   │   │   └── logging.py
+│   │   ├── models/            # SQLAlchemy models
+│   │   │   └── postgres.py    # User, Order, OrderItem
+│   │   ├── repositories/      # Data access layer
+│   │   │   ├── elasticsearch/ # ES document, search, index
+│   │   │   ├── mongo/         # Product catalog
+│   │   │   └── postgres/      # Order repo
+│   │   ├── schemas/           # Pydantic models (request/response)
+│   │   │   ├── auth.py
+│   │   │   ├── orders.py
+│   │   │   ├── products.py
+│   │   │   ├── search.py
+│   │   │   └── common.py
+│   │   ├── services/          # Business logic
+│   │   │   ├── auth_service.py
+│   │   │   ├── order_service.py
+│   │   │   ├── product_service.py
+│   │   │   ├── search_service.py
+│   │   │   └── sync_service.py
+│   │   ├── tasks/             # Celery tasks
+│   │   │   ├── celery_app.py
+│   │   │   └── elasticsearch_tasks.py
+│   │   └── main.py            # FastAPI app + lifespan
+│   ├── scripts/
+│   │   ├── seed.py            # Reproducible data generation
+│   │   └── reindex_orders.py  # ES reindex from PG
+│   ├── Dockerfile
+│   └── requirements.txt
+│
+├── frontend/                   # Vue 3 + Vite SPA
+│   ├── src/
+│   │   ├── api/               # Axios clients per domain
+│   │   │   ├── client.js      # Axios instance + interceptors
+│   │   │   ├── products.js
+│   │   │   ├── orders.js
+│   │   │   ├── search.js
+│   │   │   └── users.js
+│   │   ├── components/        # Reusable UI components
+│   │   │   ├── common/        # Base UI (Button, Input, Card, etc.)
+│   │   │   ├── storefront/    # ProductCard, ProductGrid, Filters, Cart
+│   │   │   ├── admin/         # KPI cards, SearchFilters, Tables
+│   │   │   ├── checkout/      # OrderSummary, LineItems
+│   │   │   └── auth/          # LoginForm
+│   │   ├── layouts/           # Page shells
+│   │   │   ├── StorefrontLayout.vue
+│   │   │   └── AdminLayout.vue
+│   │   ├── views/             # Page components
+│   │   │   ├── StorefrontView.vue
+│   │   │   ├── CheckoutView.vue
+│   │   │   ├── AdminSearchView.vue
+│   │   │   ├── OrderDetailsView.vue
+│   │   │   ├── CatalogAdminView.vue
+│   │   │   └── LoginView.vue
+│   │   ├── stores/            # Pinia stores
+│   │   │   ├── auth.js        # JWT, user, role
+│   │   │   ├── cart.js        # Cart state (local)
+│   │   │   └── toast.js       # Notifications
+│   │   ├── router/            # Vue Router + guards
+│   │   ├── stores/            # Pinia stores
+│   │   ├── styles/            # CSS tokens + utilities
+│   │   ├── utils/             # Helpers (currency, dates, debounce)
+│   │   ├── App.vue
+│   │   └── main.js
+│   ├── Dockerfile
+│   ├── package.json
+│   └── vite.config.js
+│
+├── tests/                      # pytest + vitest
+│   ├── unit/                  # Pure logic (no infra)
+│   └── integration/           # Against real containers
+│
+├── docker-compose.yml         # All services + networks/volumes
+├── .env.example               # Template for secrets
+├── README.md
+├── TODO.md
+├── IMPLEMENTATION_STATUS.md
+└── pytest.ini
+Byte 5: Database Responsibilities & Data Flow
+Builds on: Byte 4
+In plain terms:
+Each database has a single, non-overlapping responsibility. The architecture prevents the most common e-commerce data bugs by enforcing ownership at the code level.
+┌────────────────────────────────────────────────────────────────────────────┐
+│                        DATABASE RESPONSIBILITY MATRIX                       │
+├──────────────┬──────────────────────┬──────────────────┬──────────────────┤
+│   Domain     │   MongoDB            │   PostgreSQL     │   Elasticsearch  │
+├──────────────┼──────────────────────┼──────────────────┼──────────────────┤
+│ Products     │ ✅ OWNER             │ ❌ Never reads   │ ❌ Never         │
+│              │ - title, price       │   for products   │                  │
+│              │ - category, tags     │                  │                  │
+│              │ - variants, attrs    │                  │                  │
+├──────────────┼──────────────────────┼──────────────────┼──────────────────┤
+│ Orders       │ ❌ Never             │ ✅ OWNER         │ ❌ Never writes  │
+│              │   writes orders      │ - users          │   (read-only for │
+│              │                      │ - orders         │   admin search)  │
+│              │                      │ - order_items    │                  │
+│              │                      │ - snapshots      │                  │
+├──────────────┼──────────────────────┼──────────────────┼──────────────────┤
+│ Search/      │ ❌ Never             │ ❌ Never         │ ✅ OWNER         │
+│ Analytics    │                      │                  │ - order search   │
+│ (Admin)      │                      │                  │ - filters        │
+│              │                      │                  │ - aggregations   │
+└──────────────┴──────────────────────┴──────────────────┴──────────────────┘
+Data Flow for Order Placement:
+1. Customer clicks "Place Order" (frontend)
+         │
+         ▼
+2. POST /api/orders {user_id, items[]}  ──► FastAPI
+         │
+         ▼
+3. order_service.resolve_cart()
+   - Fetch products from MongoDB by ID
+   - Validate active, price > 0
+   - Server-side pricing (client never trusted)
+         │
+         ▼
+4. Explicit PostgreSQL transaction:
+   BEGIN
+   INSERT INTO orders ...
+   INSERT INTO order_items ...  (snapshots title + price)
+   COMMIT
+         │
+         ▼
+5. sync_service.publish_order_sync() → RabbitMQ
+         │
+         ▼
+6. Celery worker picks up task
+   - Reads order from PostgreSQL
+   - Builds ES document (snapshots!)
+   - Indexes to Elasticsearch
+   - Retries on failure
+Critical Invariant: OrderItems store snapshots (title + price at purchase time). If MongoDB product changes later, historical orders remain unchanged.
+Byte 6: Authentication & Authorization
+Builds on: Byte 5
+In plain terms:
+Stateless JWT authentication with role-based access control. No server-side sessions.
+Backend Implementation:
+# backend/app/core/auth.py
+pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+
+def hash_password(password: str) -> str:
+    return pwd_context.hash(password)
+
+def verify_password(plain: str, hashed: str) -> bool:
+    return pwd_context.verify(plain, hashed)
+
+def create_access_token(data: dict) -> str:
+    # JWT with "sub" = user.id as string, 24h expiry
+    ...
+
+def get_current_user(credentials, db) -> User:
+    # 1. Extract Bearer token
+    # 2. Decode JWT, validate signature + expiry
+    # 3. Load User from PostgreSQL by ID
+    # 4. Raise 401 if any step fails
+
+def require_admin(current_user) -> User:
+    if current_user.role != "ADMIN":
+        raise HTTPException(403, "Admin access required")
+Frontend Auth Store (Pinia):
+// frontend/src/stores/auth.js
+export const useAuthStore = defineStore('auth', {
+  state: () => ({
+    token: localStorage.getItem('meridian.auth.token') || null,
+    user: JSON.parse(localStorage.getItem('meridian.auth.user') || 'null'),
+  }),
+  getters: {
+    isAuthenticated: (s) => !!s.token && !!s.user,
+    isAdmin: (s) => s.user?.role === 'ADMIN',
+  },
+  actions: {
+    async login(email, password) {
+      const { access_token, user } = await client.post('/api/auth/login', { email, password })
+      this.token = access_token
+      this.user = user
+      localStorage.setItem('meridian.auth.token', this.token)
+      localStorage.setItem('meridian.auth.user', JSON.stringify(this.user))
+    },
+    async fetchMe() { /* validate token via /api/auth/me */ }
+  }
+})
+Route Guards (Vue Router):
+// frontend/src/router/index.js
+router.beforeEach(async (to, from, next) => {
+  const authStore = useAuthStore()
+  await authStore.init()  // hydrate from localStorage
+  
+  if (to.meta.requiresAuth && !authStore.isAuthenticated)
+    return next({ name: 'login', query: { redirect: to.fullPath } })
+  
+  if (to.meta.requiresAdmin && !authStore.isAdmin)
+    return next({ name: 'storefront' })  // redirect non-admins
+  
+  next()
+})
+Route Metadata:
+Route	Path	Meta
+Storefront	/	public
+Checkout	/checkout	requiresAuth: true
+Login	/login	guest: true
+Admin Search	/admin/search	requiresAuth: true, requiresAdmin: true
+Order Details	/admin/orders/:id	requiresAuth: true, requiresAdmin: true
+Catalog Admin	/admin/catalog	requiresAuth: true, requiresAdmin: true
+Demo Credentials (from seed):
+Role	Email	Password
+Customer	john.doe@example.com (mailto:john.doe@example.com)	john
+Admin	admin@example.com (mailto:admin@example.com)	admin
+Byte 7: Order Lifecycle — The Core Business Logic
+Builds on: Byte 6
+In plain terms:
+Order creation is the most critical path. It must be correct, consistent, and auditable.
+order_service.create_order(payload) — Step by Step:
+def create_order(payload: OrderCreate) -> OrderCreateResponse:
+    # 1. RESOLVE CART — Server-side validation & pricing
+    lines, total = resolve_cart(payload.items)
+    # - Fetch products from MongoDB by ID
+    # - Validate active, price > 0
+    # - Merge duplicate product_ids
+    # - Server computes total (client total ignored)
+
+    # 2. EXPLICIT POSTGRESQL TRANSACTION
+    session = SessionLocal()
+    try:
+        session.begin()
+        
+        user = order_repo.get_user(session, payload.user_id)
+        if not user: raise NotFoundError
+        
+        order = Order(
+            order_number=_temporary_order_number(),  # TMP-...
+            user=user,
+            order_date=now,
+            status="PENDING",
+            total_amount=total,
+        )
+        session.add(order)
+        session.flush()  # Get order.id
+        
+        order.order_number = f"ORD-{order.id:06d}"  # ORD-000042
+        
+        for line in lines:
+            session.add(OrderItem(
+                order=order,
+                product_id=line.product_id,
+                title=line.title,      # SNAPSHOT from MongoDB
+                quantity=line.quantity,
+                unit_price=line.unit_price,  # SNAPSHOT from MongoDB
+            ))
+        
+        session.commit()  # ORDER IS NOW DURABLE
+    finally:
+        session.close()
+
+    # 3. ASYNC SYNC — Only after COMMIT
+    sync = sync_service.publish_order_sync(order.id, "order_created")
+    return OrderCreateResponse(..., sync=sync)
+Key Guarantees:
+Guarantee	How It's Enforced
+Server computes total	Client never sends total_amount
+No partial orders	Explicit BEGIN/COMMIT/ROLLBACK
+Snapshot isolation	OrderItem.title + unit_price copied at purchase
+No lost orders on RabbitMQ failure	sync reported separately; order already committed
+Idempotent ES indexing	_id = order_id makes reindex safe
+Order Status Flow:
+PENDING ──(admin)──► PROCESSING ──(admin)──► SHIPPED
+     │                   │                   │
+     ▼                   ▼                   ▼
+  Can cancel       Can ship           Final state
+Byte 8: Product Catalog — MongoDB Document Design
+Builds on: Byte 7
+In plain terms:
+MongoDB stores the live product catalog with flexible schema for variants and attributes.
+Product Document:
+{
+  "_id": ObjectId,
+  "sku": "WM-001",
+  "title": "Wireless Mouse",
+  "description": "Ergonomic 2.4GHz wireless mouse...",
+  "price": 50.16,
+  "category": "peripherals",
+  "tags": ["wireless", "usb", "office", "ergonomic"],
+  "attributes": {
+    "color": "black",
+    "dpi": 1600,
+    "battery": "AA",
+    "connection": "2.4GHz"
+  },
+  "variants": [
+    {"sku": "WM-001-BLK", "color": "black", "stock": 40},
+    {"sku": "WM-001-WHT", "color": "white", "stock": 25}
+  ],
+  "active": true,
+  "created_at": ISODate,
+  "updated_at": ISODate
+}
+Indexes (MongoDB):
+# backend/app/repositories/mongo/product_repo.py
+collection.create_index([("sku", ASCENDING)], unique=True)  # unique SKU
+collection.create_index([("category", ASCENDING)])          # category filter
+collection.create_index([("active", ASCENDING)])            # active/inactive
+collection.create_index([("created_at", DESCENDING)])       # newest sort
+Query Building (Storefront):
+def _build_filter(category=None, tags=None, q=None, visibility="active"):
+    query = {}
+    if visibility == "active": query["active"] = True
+    if category: query["category"] = category.lower()
+    if tags: query["tags"] = {"$all": [t.lower() for t in tags]}
+    if q:
+        pattern = {"$regex": re.escape(q), "$options": "i"}
+        query["$or"] = [
+            {"title": pattern},
+            {"description": pattern},
+            {"sku": pattern},
+            {"tags": pattern},
+        ]
+    return query
+Facets for Storefront Filters:
+def list_facets(include_inactive=False):
+    pipeline = [
+        {"$match": {"active": True} if not include_inactive else {}},
+        {"$facet": {
+            "categories": [
+                {"$group": {"_id": "$category", "count": {"$sum": 1}}},
+                {"$sort": {"count": -1, "_id": 1}}
+            ],
+            "tags": [
+                {"$unwind": "$tags"},
+                {"$group": {"_id": "$tags", "count": {"$sum": 1}}},
+                {"$sort": {"count": -1, "_id": 1}},
+                {"$limit": 40}
+            ]
+        }}
+    ]
+Byte 8: Elasticsearch — Admin Order Search
+Builds on: Byte 8
+In plain terms:
+Elasticsearch is only for admin order search. Customers never query it. It provides full-text, prefix, nested, and aggregation search on order documents.
+Index Mapping (orders):
+# backend/app/repositories/elasticsearch/mappings.py
+ORDER_INDEX_MAPPING = {
+    "dynamic": "strict",
+    "properties": {
+        "order_id": {"type": "long"},
+        "order_number": {"type": "keyword"},
+        "status": {"type": "keyword"},
+        "order_date": {"type": "date"},
+        "updated_at": {"type": "date"},
+        "total_amount": {"type": "double"},
+        "customer": {
+            "type": "object",
+            "properties": {
+                "id": {"type": "long"},
+                "name": {"type": "search_as_you_type", "fields": {"keyword": {"type": "keyword"}}},
+                "email": {"type": "search_as_you_type", "fields": {"keyword": {"type": "keyword"}}},
+            }
+        },
+        "items": {
+            "type": "nested",  # Each line item is a separate nested doc
+            "properties": {
+                "product_id": {"type": "keyword"},
+                "title": {"type": "search_as_you_type", "fields": {"keyword": {...}}},
+                "quantity": {"type": "integer"},
+                "unit_price": {"type": "double"},
+                "line_total": {"type": "double"},
+            }
+        }
+    }
+}
+Key Mapping Decisions:
+Field	Type	Why
+customer.name	search_as_you_type	Prefix matching: joh → John Doe
+items	nested	Line items are independent docs; query per item
+items.title	search_as_you_type	Prefix: wire → Wireless Mouse
+status	keyword	Exact filter, aggregations
+total_amount	double	Range queries, sum aggregation
+Search Query (bool_prefix for prefix matching):
+def build_search_query(request):
+    filters = []
+    should = []
+    
+    if request.status:
+        filters.append({"terms": {"status": list(request.status)}})
+    
+    if request.query:
+        should.append({
+            "multi_match": {
+                "query": request.query,
+                "fields": ["customer.name^3", "customer.email", "order_number"],
+                "type": "bool_prefix",  # <-- prefix matching!
+                "operator": "or",
+            }
+        })
+        should.append({
+            "nested": {
+                "path": "items",
+                "score_mode": "max",
+                "query": {
+                    "multi_match": {
+                        "query": request.query,
+                        "fields": ["items.title^2"],
+                        "type": "bool_prefix",
+                        "operator": "or",
+                    }
+                }
+            }
+        })
+    
+    return {
+        "query": {"bool": {"filter": filters, "should": should, "minimum_should_match": 1}},
+        "aggs": {"revenue": {"sum": {"field": "total_amount"}}, "status_counts": {"terms": {"field": "status"}}},
+        "sort": [{"order_date": "desc"}, {"order_id": "desc"}],
+        "from": offset, "size": limit,
+    }
+Query Features:
+Feature	Implementation
+Full-text search	multi_match on customer + items
+Prefix matching	type: "bool_prefix" on search_as_you_type fields
+Status filter	terms query on status keyword
+Date range	range on order_date
+Price range	range on total_amount
+Pagination	from / size
+Sort	order_date desc, order_id desc
+Revenue KPI	sum aggregation on total_amount
+Status counts	terms aggregation on status
+Byte 9: RabbitMQ + Celery — Async Synchronization
+Builds on: Byte 8
+In plain terms:
+PostgreSQL commits the order, then asynchronously publishes a sync task. The Celery worker builds the Elasticsearch document from PostgreSQL (never MongoDB).
+Flow:
+POST /api/orders
+    │
+    ▼
+PostgreSQL COMMIT (order durable)
+    │
+    ▼
+sync_service.publish_order_sync(order_id, "order_created")
+    │
+    ▼
+RabbitMQ queue: "orders_sync"
+    │
+    ▼
+Celery Worker (concurrency=2)
+    │
+    ▼
+sync_order_to_elasticsearch(order_id, reason="order_created")
+    │
+    ▼
+1. SessionLocal() → SELECT order + items + user
+2. build_order_document() → dict
+3. ensure_index() → create index if missing
+4. index_order_document(doc) → ES index
+5. mark_search_indexed(order_id) → PostgreSQL bookkeeping
+Celery Configuration:
+# backend/app/tasks/celery_app.py
+celery_app = Celery(
+    "app.tasks",
+    broker=settings.broker_url,
+    backend="rpc://",  # Result backend
+    task_serializer="json",
+    result_serializer="json",
+    accept_content=["json"],
+    task_acks_late=True,        # Acknowledge AFTER processing
+    worker_prefetch_multiplier=1,  # Fair distribution
+)
+
+# Task definition
+@celery_app.task(
+    bind=True,
+    name="app.tasks.elasticsearch_tasks.sync_order_to_elasticsearch",
+    acks_late=True,
+    autoretry_for=(Exception,),
+    retry_backoff=True,
+    retry_backoff_max=120,
+    retry_jitter=True,
+    max_retries=5,
+)
+def sync_order_to_elasticsearch(self, order_id, reason):
+    ...
+Retry Policy:
+Attempt	Delay
+1	10s
+2	20s
+3	40s
+4	80s
+5	120s (max)
+Idempotency: Document _id = order_id makes reindexing safe (upsert semantics).
+Byte 9: RabbitMQ + Celery — Async Synchronization
+Builds on: Byte 8
+In plain terms:
+PostgreSQL commits the order, then asynchronously publishes a sync task. The Celery worker builds the Elasticsearch document from PostgreSQL (never MongoDB).
+Flow:
+POST /api/orders
+    │
+    ▼
+PostgreSQL COMMIT (order durable)
+    │
+    ▼
+sync_service.publish_order_sync(order_id, "order_created")
+    │
+    ▼
+RabbitMQ queue: "orders_sync"
+    │
+    ▼
+Celery Worker (concurrency=2)
+    │
+    ▼
+sync_order_to_elasticsearch(order_id, reason="order_created")
+    │
+    ▼
+1. SessionLocal() → SELECT order + items + user
+2. build_order_document() → dict
+3. ensure_index() → create index if missing
+4. index_order_document(doc) → ES index
+5. mark_search_indexed(order_id) → PostgreSQL bookkeeping
+Celery Configuration:
+# backend/app/tasks/celery_app.py
+celery_app = Celery(
+    "app.tasks",
+    broker=settings.broker_url,
+    backend="rpc://",  # Result backend
+    task_serializer="json",
+    result_serializer="json",
+    accept_content=["json"],
+    task_acks_late=True,        # Acknowledge AFTER processing
+    worker_prefetch_multiplier=1,  # Fair distribution
+)
+
+# Task definition
+@celery_app.task(
+    bind=True,
+    name="app.tasks.elasticsearch_tasks.sync_order_to_elasticsearch",
+    acks_late=True,
+    autoretry_for=(Exception,),
+    retry_backoff=True,
+    retry_backoff_max=120,
+    retry_jitter=True,
+    max_retries=5,
+)
+def sync_order_to_elasticsearch(self, order_id, reason):
+    ...
+Retry Policy:
+Attempt	Delay
+1	10s
+2	20s
+3	40s
+4	80s
+5	120s (max)
+Idempotency: Document _id = order_id makes reindexing safe (upsert semantics).
+Byte 10: Frontend Architecture — Vue 3 + Pinia + Router
+Builds on: Byte 9
+In plain terms:
+Vue 3 SPA with composition API, Pinia for state, Vue Router with navigation guards.
+App Structure:
+frontend/src/
+├── main.js                 # App bootstrap + router + Pinia
+├── App.vue                 # Root: <router-view> + <ToastHost>
+├── router/index.js         # Routes + navigation guards
+├── api/
+│   ├── client.js           # Axios + auth interceptor + error handling
+│   ├── products.js         # listProducts, getProductFacets
+│   │   ├── orders.js       # createOrder, getOrder
+│   │   └── auth.js         # login, logout, me
+├── stores/
+│   ├── auth.js             # JWT, user, role, login/logout
+│   ├── cart.js             # Local cart state (not server)
+│   └── toast.js            # Notifications
+├── router/index.js         # Routes + auth/admin guards
+├── layouts/
+│   ├── StorefrontLayout.vue  # Customer header, cart, search
+│   └── AdminLayout.vue       # Admin sidebar, header
+├── views/
+│   ├── StorefrontView.vue    # Hero + Categories + Filters + Grid
+│   ├── CheckoutView.vue      # Cart review + place order
+│   ├── AdminSearchView.vue   # KPIs + filters + results table
+│   ├── OrderDetailsView.vue  # Order lines + status dropdown
+│   ├── CatalogAdminView.vue  # Product table + CRUD modal
+│   └── LoginView.vue
+└── components/
+    ├── common/           # BaseButton, BaseInput, Card, Modal, etc.
+    ├── storefront/       # ProductCard, ProductGrid, ProductFilters, CartDrawer
+    └── admin/            # SearchKpis, SearchFilters, OrderStatusControl
+State Management (Pinia):
+// stores/auth.js
+const useAuthStore = defineStore('auth', {
+  state: () => ({
+    token: localStorage.getItem('token') || null,
+    user: JSON.parse(localStorage.getItem('user') || 'null'),
+  }),
+  getters: {
+    isAuthenticated: () => !!token && !!user,
+    isAdmin: () => user?.role === 'ADMIN',
+  },
+  actions: {
+    async login(email, password) { ... },
+    async logout() { ... },
+    async fetchMe() { /* /api/auth/me */ },
+  }
+})
+
+// stores/cart.js - LOCAL ONLY (server re-prices at checkout)
+const useCartStore = defineStore('cart', {
+  state: () => ({ items: {} }),  // id -> {id, title, price, qty}
+  getters: {
+    itemCount: () => sum(items.qty),
+    subtotal: () => sum(items.price * items.qty),
+  },
+  actions: {
+    add(product, qty) { /* merge or create */ },
+    setQuantity(id, qty) { /* clamp 1-100 */ },
+  }
+})
+Router Guards:
+router.beforeEach(async (to, from, next) => {
+  const authStore = useAuthStore()
+  await authStore.init()  // hydrate from localStorage
+  
+  if (to.meta.requiresAuth && !authStore.isAuthenticated)
+    return next({ name: 'login', query: { redirect: to.fullPath } })
+  if (to.meta.requiresAdmin && !authStore.isAdmin)
+    return next({ name: 'storefront' })
+  if (to.meta.guest && authStore.isAuthenticated)
+    return next({ name: 'storefront' })
+  
+  next()
+})
+Byte 11: Storefront UX — Product Discovery
+Builds on: Byte 10
+In plain terms:
+The storefront is a customer-facing e-commerce UI with hero, categories, filters, and product grid.
+Page Structure (StorefrontView.vue):
+<HeroSection />                    ← Marketing hero + 4 featured products
+<CategorySection />                ← 4 clickable category cards
+<div class="products">
+  <div class="header">
+    <ProductCount />               ← "42 products matching your filters"
+    <ProductFilters />             ← Collapsible: search + category + sort + tags
+  </div>
+  <ProductGrid />                  ← 4/3/2/1 column responsive grid
+  <AppPagination />                ← Page numbers
+</div>
+Product Card (ProductCard.vue):
+- Image placeholder (ProductThumb)
+- Category badge
+- Title (truncated)
+- Description (2-line clamp)
+- Up to 3 tag chips + overflow indicator
+- "Add to Cart" button with "Added" state feedback
+Product Filters (ProductFilters.vue):
+- Search input (debounced 350ms)
+- Category dropdown (from facets)
+- Sort dropdown (newest, title, price)
+- Tag chips (max 10, "+N more" expandable)
+- Collapsible panel
+- Reset button (shows active count)
+Category Section (CategorySection.vue):
+- 4 cards from MongoDB facets
+- Click → navigates with ?category=peripherals
+- Shows product count per category
+Byte 12: Checkout & Cart
+Builds on: Byte 11
+In plain terms:
+Cart is local-only (Pinia). Server re-validates and re-prices at checkout.
+Cart State (cart.js):
+state: () => ({
+  items: {}  // { productId: { id, title, price, quantity, category } }
+}),
+getters: {
+  itemCount: sum(qty),
+  subtotal: sum(price * qty),
+  isEmpty: items.length === 0,
+},
+actions: {
+  add(product, qty=1) { /* merge or create, clamp 1-100 */ },
+  setQuantity(id, qty) { /* clamp 1-100 */ },
+  remove(id) { delete items[id] },
+  clear() { items = {} },
+}
+Checkout Flow (CheckoutView.vue):
+1. User clicks Cart → CartDrawer → "Checkout"
+         │
+         ▼
+2. GET /api/products for each cart item (live prices)
+         │
+         ▼
+3. Display line items with live prices
+         │
+         ▼
+4. POST /api/orders { items: [{product_id, quantity}] }
+         │           (no user_id — taken from JWT)
+         ▼
+5. order_service.create_order()
+   - Validates all items still active
+   - Re-prices from MongoDB
+   - PostgreSQL transaction
+         │
+         ▼
+6. On success: cart.clear(), show success panel with order number
+Key Point: Cart prices are snapshots. At checkout, the server re-fetches live prices from MongoDB and re-computes total. The client total is never trusted.
+Byte 12: Admin Dashboard — Order Search & Analytics
+Builds on: Byte 8, 9
+In plain terms:
+Admin-only dashboard for searching/filtering orders with KPIs and aggregations.
+AdminSearchView Layout:
+<KpiCards />                          ← Revenue, Orders, Pending/Processing/Shipped
+<SearchFilters />                     ← Query + Status + Date + Price range
+<ResultsTable /> / <ResultsCardList>  ← Desktop table / Mobile cards
+<AppPagination />
+KPI Cards (SearchKpis.vue):
+- Total Revenue (sum aggregation)
+- Filtered Orders (total hits)
+- Pending / Processing / Shipped (status_counts aggregation)
+Search Filters (SearchFilters.vue):
+- Text query (customer name, email, order#, product title)
+- Status multiselect (PENDING/PROCESSING/SHIPPED)
+- Date range (date_from, date_to)
+- Price range (min_price, max_price)
+- Reset button
+Results Display:
+- Desktop: ResultsTable.vue — sortable columns
+- Mobile: ResultsCardList.vue — stacked cards
+- Click row → /admin/orders/:id (OrderDetailsView.vue)
+Order Details (OrderDetailsView.vue):
+- Order header: number, date, status badge, sync indicator
+- Customer card: name, email, customer_id
+- Totals card: line items, units, total
+- Line items table: #, product (title + ID), qty, unit price, line total
+- Status dropdown (admin only) → PATCH /api/orders/{id}/status
+Byte 13: Seed Data & Reproducible Testing
+Builds on: Byte 7, 8
+In plain terms:
+Deterministic seed creates identical data every run for consistent testing.
+Seed Script (scripts/seed.py):
+docker compose run --rm seed
+# or
+python -m scripts.seed [--skip-search] [--verify-only]
+What It Creates:
+Entity	Count	Details
+Users	9	8 customers + 1 admin (password = first name lowercase / "admin")
+Products	27	26 active + 1 inactive across 4 categories
+Orders	44	86 line items, 15/15/14 per status
+ES Docs	44	1:1 with PostgreSQL orders
+Deterministic Fixtures:
+USERS = [
+    ("John Doe", "john.doe@example.com"),
+    ("Jane Smith", "jane.smith@example.com"),
+    ("Wendy Wireless", "wendy.wireless@example.com"),
+    ...
+]
+
+# 44 orders with specific:
+# - 15 PENDING, 15 PROCESSING, 14 SHIPPED
+# - Date spread: >60 days, ≤7 days, middle
+# - Total buckets: <$30, $30-150, >$200
+# - Per-user: ≥2 orders, Wendy ≥3 with wireless
+# - Search fixtures: ≥8 "Wireless Mouse", ≥3 "Mechanical Keyboard", ≥2 both
+
+# Snapshot demo:
+# After orders created, MongoDB "Wireless Mouse" ($50.16) → "Wireless Mouse Pro" ($60.00)
+# PostgreSQL/ES keep original $50.16 snapshots
+Verification (verify() in seed.py):
+- User count = 9
+- Order count ≥ 40, items ≥ 80
+- Each status ≥ 10
+- Date spread checks
+- Total amount buckets
+- Per-user order counts
+- Snapshot integrity (ES/PG have old title/price)
+- ES document count = PG order count
+Byte 13: Testing Strategy
+Builds on: Byte 12
+In plain terms:
+Three test layers: pure unit (fast), integration (real infra), frontend smoke.
+Backend Tests (pytest):
+tests/
+├── unit/                          # No infrastructure needed
+│   ├── test_pricing.py            # Decimal math, rounding, merging
+│   ├── test_schemas.py            # Pydantic validation
+│   ├── test_es_document.py        # build_order_document()
+│   └── test_search_query.py       # build_search_query() shapes
+│
+└── integration/                   # Requires Docker infra
+    ├── test_orders_api.py         # Order creation, snapshots, rollback
+    ├── test_products_api.py       # CRUD, facets, filters
+    ├── test_search_api.py         # ES query, filters, aggs, architecture guard
+    └── test_sync_task.py          # Celery task, idempotency, retry
+Key Integration Test Patterns:
+# tests/conftest.py
+@pytest.fixture(scope="session")
+def api():
+    from fastapi.testclient import TestClient
+    from app.main import app
+    with TestClient(app, raise_server_exceptions=False) as client:
+        yield client
+
+@pytest.fixture
+def product_factory():
+    created = []
+    def _create(**overrides):
+        # Creates product in MongoDB, tracks for cleanup
+    yield _create
+    # Cleanup: delete created products
+
+# Architecture guard test
+def test_search_service_never_touches_postgres_or_mongodb():
+    forbidden = ("SessionLocal", "sqlalchemy", "MongoClient", "pymongo", "get_mongo_db")
+    for path in [search_service.py, search.py, search_repo.py]:
+        source = path.read_text()
+        for token in forbidden:
+            assert token not in source
+Frontend Tests (Vitest):
+// tests/smoke.spec.js - Full app render against live API
+import { mount, flushPromises } from '@vue/test-utils'
+import { createRouter, createMemoryHistory } from 'vue-router'
+
+it('storefront renders live catalog products', async () => {
+  const wrapper = await mountAt('/')
+  const cards = wrapper.findAll('.product-card').length
+  if (up) expect(cards).toBeGreaterThan(0)
+})
+Run Commands:
+# Backend
+python -m pytest                    # All tests
+python -m pytest tests/unit/        # Unit only
+python -m pytest tests/integration/ # Integration only
+
+# Frontend
+npx vitest run                      # All tests
+npm run build                       # Production build
+Byte 14: Docker & Deployment
+Builds on: Byte 13
+In plain terms:
+Docker Compose orchestrates all services. Two frontend profiles: dev (Vite) and prod (nginx).
+Docker Compose Services:
+services:
+  postgres:      postgres:16-alpine       # Port 5432
+  mongodb:       mongo:7                  # Port 27017
+  elasticsearch: docker.elastic.co/...   # Port 9200
+  rabbitmq:      rabbitmq:3.13-management # Port 5672 + 15672
+  backend:       uvicorn --reload         # Port 8000
+  celery-worker: celery worker            # Concurrency 2
+  frontend:      npm run dev              # Port 5173 (Vite)
+  frontend-prod: nginx                    # Port 8080 (--profile prod)
+  seed:          python -m scripts.seed   # One-shot
+  reindex:       python -m reindex        # One-shot
+Key Compose Patterns:
+# Backend depends on healthy infra
+backend:
+  depends_on:
+    postgres: {condition: service_healthy}
+    mongodb: {condition: service_healthy}
+    elasticsearch: {condition: service_healthy}
+    rabbitmq: {condition: service_healthy}
+
+# In-network DNS names (not localhost)
+environment:
+  POSTGRES_HOST: postgres
+  MONGO_URI: mongodb://mongodb:27017
+  ELASTICSEARCH_URL: http://elasticsearch:9200
+  RABBITMQ_URL: amqp://user:pass@rabbitmq:5672//
+
+# Vite proxy for frontend dev
+environment:
+  VITE_PROXY_TARGET: http://backend:8000
+Healthchecks (all services):
+postgres:
+  test: ["CMD-SHELL", "pg_isready -U ecommerce -d ecommerce"]
+  interval: 5s, timeout: 5s, retries: 12
+
+elasticsearch:
+  test: ["CMD-SHELL", "curl -fsS http://localhost:9200/_cluster/health?wait_for_status=yellow&timeout=5s"]
+  interval: 10s, retries: 20, start_period: 30s
+Run Commands:
+# Development
+cp .env.example .env
+docker compose up -d --build
+docker compose run --rm seed
+
+# Production frontend
+docker compose --profile prod up -d --build frontend-prod
+
+# Tests
+python -m pytest
+npx vitest run
+npm run build
+Byte 14: Common Debugging Scenarios
+Builds on: Byte 14
+In plain terms:
+How to diagnose the most common issues in this system.
+Symptom	Likely Cause	Check
+Backend unhealthy	PG/Mongo/ES/Rabbit not ready	docker compose logs backend
+Search returns 0 hits	ES index missing / mapping mismatch	curl localhost:9200/orders/_mapping
+Partial search fails	Mapping not search_as_you_type	Check mappings.py
+Order not in ES	Celery worker down / RabbitMQ down	docker compose logs celery-worker
+Auth 401	JWT expired / secret mismatch	Check JWT_SECRET_KEY in .env
+Admin 403	User role != ADMIN	Check PostgreSQL users.role
+Cart empty after refresh	Pinia state not persisted	Cart is local-only (by design)
+Seed fails	DB not ready / ES connection	docker compose ps — wait for healthy
+Useful Debug Commands:
+# View backend logs
+docker compose logs -f backend
+
+# Check Elasticsearch index
+curl localhost:9200/orders/_mapping | jq
+curl localhost:9200/orders/_search?q=wire | jq
+
+# Check RabbitMQ queues
+curl -u ecommerce:change_me_rabbit localhost:15672/api/queues | jq
+
+# PostgreSQL direct query
+docker compose exec postgres psql -U ecommerce -d ecommerce -c "SELECT * FROM orders LIMIT 5;"
+
+# MongoDB direct query
+docker compose exec mongodb mongosh catalog --eval "db.products.find().limit(3).pretty()"
+
+# Celery worker status
+docker compose exec celery-worker celery -A app.tasks.celery_app inspect active
+Byte 15: Key Files Quick Reference
+Builds on: Byte 14
+In plain terms:
+Quick index of the most important files for each domain.
+Domain	File	Purpose
+Architecture	docker-compose.yml	All services, networks, volumes
+Config	backend/app/core/config.py	All settings via Pydantic
+DB Schema	backend/app/models/postgres.py	User, Order, OrderItem
+Auth	backend/app/core/auth.py	JWT, bcrypt, deps
+Auth API	backend/app/api/auth.py	Login, logout, /me
+Orders	backend/app/services/order_service.py	Cart validation, transaction, sync
+Products	backend/app/repositories/mongo/product_repo.py	Catalog CRUD, facets
+Search	backend/app/repositories/elasticsearch/search_repo.py	ES query builder
+Sync	backend/app/tasks/elasticsearch_tasks.py	Celery task + retries
+Sync Pub	backend/app/services/sync_service.py	RabbitMQ publisher
+ES Mapping	backend/app/repositories/elasticsearch/mappings.py	search_as_you_type fields
+ES Document	backend/app/repositories/elasticsearch/document.py	PG → ES transformer
+Celery	backend/app/tasks/celery_app.py	App + task config
+Seed	backend/scripts/seed.py	Reproducible data
+Frontend Auth	frontend/src/stores/auth.js	Pinia auth store
+Frontend Router	frontend/src/router/index.js	Routes + guards
+API Client	frontend/src/api/client.js	Axios + auth interceptor
+Storefront	frontend/src/views/StorefrontView.vue	Hero + Categories + Filters + Grid
+Hero	frontend/src/components/storefront/HeroSection.vue	Marketing section
+Categories	frontend/src/components/storefront/CategorySection.vue	Category cards
+Filters	frontend/src/components/storefront/ProductFilters.vue	Collapsible filters
+Admin KPIs	frontend/src/components/admin/SearchKpis.vue	KPI cards
+Router Guards	frontend/src/router/index.js	Auth/admin protection
+This concludes the Knowledge Bytes. You now have a complete mental model of the E-Commerce Order Management & Search Service — from business problem through architecture, data flow, authentication, search, async sync, frontend, testing, and deployment.	

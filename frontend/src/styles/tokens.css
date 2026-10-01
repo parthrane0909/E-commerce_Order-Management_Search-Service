@@ -1,0 +1,198 @@
+/* Design tokens + base/reset styles for the Meridian demo UI.
+   One accent (indigo), a neutral grey scale, a small radius scale,
+   two shadow levels and an 8px-based spacing scale. */
+
+:root {
+  /* ---------- neutral scale ---------- */
+  --bg: #f4f5f7;
+  --surface: #ffffff;
+  --surface-2: #f1f3f6;
+  --surface-3: #e8ebf0;
+  --border: #e2e5ea;
+  --border-strong: #cbd1da;
+  --text: #12161d;
+  --text-muted: #5b6472;
+  --text-faint: #8a93a1;
+  --inverse: #ffffff;
+
+  /* ---------- accent ---------- */
+  --accent: #4f46e5;
+  --accent-hover: #4338ca;
+  --accent-active: #3730a3;
+  --accent-soft: #eef2ff;
+  --accent-soft-border: #dcdffe;
+  --accent-text: #4338ca;
+  --on-accent: #ffffff;
+
+  /* ---------- semantic ---------- */
+  --success: #15803d;
+  --success-soft: #dcfce7;
+  --success-border: #b7efcb;
+  --warning: #b45309;
+  --warning-soft: #fef3c7;
+  --warning-border: #fde68a;
+  --danger: #b91c1c;
+  --danger-hover: #991b1b;
+  --danger-soft: #fee2e2;
+  --danger-border: #fecaca;
+  --info: #0369a1;
+  --info-soft: #e0f2fe;
+  --info-border: #bae6fd;
+
+  /* ---------- order status ---------- */
+  --status-pending-fg: #92400e;
+  --status-pending-bg: #fef3c7;
+  --status-processing-fg: #1d4ed8;
+  --status-processing-bg: #dbeafe;
+  --status-shipped-fg: #15803d;
+  --status-shipped-bg: #dcfce7;
+
+  /* ---------- radius ---------- */
+  --radius-sm: 6px;
+  --radius: 10px;
+  --radius-lg: 14px;
+
+  /* ---------- shadows (2 levels only) ---------- */
+  --shadow-1: 0 1px 2px rgba(16, 24, 40, 0.06), 0 1px 3px rgba(16, 24, 40, 0.07);
+  --shadow-2: 0 8px 24px rgba(16, 24, 40, 0.12), 0 2px 6px rgba(16, 24, 40, 0.06);
+
+  /* ---------- spacing (8px scale) ---------- */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 24px;
+  --space-6: 32px;
+  --space-7: 48px;
+  --space-8: 64px;
+
+  /* ---------- typography ---------- */
+  --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue",
+    Arial, "Noto Sans", sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+  --text-xs: 12px;
+  --text-sm: 13px;
+  --text-base: 14px;
+  --text-md: 16px;
+  --text-lg: 20px;
+  --text-xl: 24px;
+  --text-2xl: 30px;
+  --fw-medium: 500;
+  --fw-semibold: 600;
+  --lh-tight: 1.25;
+  --lh-base: 1.5;
+
+  /* ---------- layout ---------- */
+  --content-max: 1280px;
+  --admin-max: 1400px;
+  --topbar-h: 64px;
+  --sidebar-w: 244px;
+
+  /* ---------- interaction ---------- */
+  --focus-ring: 0 0 0 3px rgba(79, 70, 229, 0.35);
+  --transition: 140ms ease;
+}
+
+/* ---------------- base / reset ---------------- */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-sans);
+  font-size: var(--text-base);
+  line-height: var(--lh-base);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+h1,
+h2,
+h3,
+h4,
+p {
+  margin: 0;
+}
+
+h1 {
+  font-size: var(--text-xl);
+  line-height: var(--lh-tight);
+  font-weight: var(--fw-semibold);
+  letter-spacing: -0.01em;
+}
+
+h2 {
+  font-size: var(--text-lg);
+  line-height: var(--lh-tight);
+  font-weight: var(--fw-semibold);
+}
+
+h3 {
+  font-size: var(--text-md);
+  line-height: var(--lh-tight);
+  font-weight: var(--fw-semibold);
+}
+
+a {
+  color: var(--accent-text);
+  text-decoration: none;
+}
+
+a:hover {
+  text-decoration: underline;
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+  color: inherit;
+}
+
+img,
+svg {
+  display: block;
+  max-width: 100%;
+}
+
+table {
+  border-collapse: collapse;
+  width: 100%;
+}
+
+code {
+  font-family: var(--font-mono);
+  font-size: var(--text-sm);
+}
+
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+::selection {
+  background: var(--accent-soft);
+  color: var(--accent-text);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
