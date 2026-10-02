@@ -15,7 +15,7 @@ function clampQty(qty) {
  */
 export const useCartStore = defineStore('cart', {
   state: () => ({
-    /** @type {Record<string, {id: string, sku: string, title: string, price: number, category: string, quantity: number}>} */
+    /** @type {Record<string, {id: string, sku: string, title: string, price: number, category: string, image_url: string | null, quantity: number}>} */
     items: {},
   }),
 
@@ -56,6 +56,7 @@ export const useCartStore = defineStore('cart', {
         title: product.title || 'Untitled product',
         price: Number(product.price) || 0,
         category: product.category || '',
+        image_url: product.image_url || null,
         quantity: clampQty(quantity),
       }
       this.items[product.id] = line

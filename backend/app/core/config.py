@@ -75,6 +75,12 @@ class Settings(BaseSettings):
     celery_retry_backoff_max: int = 120
     celery_task_always_eager: bool = False
 
+    # -------------------------------------------------------------- uploads
+    #: Local directory that stores uploaded product images.  Served back to the
+    #: browser at `/uploads/...` (see `app.main`) and persisted through the
+    #: `uploads_data` volume in docker-compose.
+    uploads_dir: str = "/app/uploads"
+
     # -------------------------------------------------------------- seeding
     seed_random_seed: int = 20240917
 
@@ -125,6 +131,11 @@ class Settings(BaseSettings):
     @property
     def cors_origin_list(self) -> list[str]:
         return [origin.strip() for origin in self.cors_origins.split(",") if origin.strip()]
+
+    @property
+    def uploads_path(self) -> Path:
+        """Absolute path of the image upload root directory."""
+        return Path(self.uploads_dir).expanduser()
 
     @property
     def sync_task_name(self) -> str:

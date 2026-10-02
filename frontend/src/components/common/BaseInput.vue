@@ -46,8 +46,6 @@ const emit = defineEmits(['update:modelValue'])
 const attrs = useAttrs()
 const injectedId = inject('meridian.formFieldId', null)
 
-// Everything except class/style goes to the input itself; class/style stay on
-// the shell so parent utilities (width, flex, margin) apply where expected.
 const controlBindings = computed(() => {
   const { class: _class, style: _style, ...rest } = attrs
   if (!rest.id && injectedId) rest.id = injectedId
@@ -66,8 +64,8 @@ function onInput(event) {
   gap: var(--space-2);
   position: relative;
   width: 100%;
-  background: var(--surface);
-  border: 1px solid var(--border-strong);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border-strong);
   border-radius: var(--radius-sm);
   transition:
     border-color var(--transition),
@@ -76,31 +74,32 @@ function onInput(event) {
 }
 
 .field:hover:not(.field--disabled) {
-  border-color: var(--text-faint);
+  border-color: var(--color-text-faint);
 }
 
 .field:focus-within {
-  border-color: var(--accent);
+  border-color: var(--color-primary);
   box-shadow: var(--focus-ring);
 }
 
 .field--invalid {
-  border-color: var(--danger);
+  border-color: var(--color-danger);
 }
 
 .field--invalid:focus-within {
-  box-shadow: 0 0 0 3px rgba(185, 28, 28, 0.28);
+  box-shadow: 0 0 0 3px rgba(198, 40, 40, 0.28);
 }
 
 .field--disabled {
-  background: var(--surface-2);
-  color: var(--text-faint);
+  background: var(--color-surface-hover);
+  color: var(--color-text-faint);
   cursor: not-allowed;
 }
 
 .field__icon {
   margin-left: var(--space-3);
-  color: var(--text-faint);
+  color: var(--color-text-faint);
+  flex-shrink: 0;
 }
 
 .field__control {
@@ -117,17 +116,22 @@ function onInput(event) {
   padding-left: 0;
 }
 
+.field--lg .field__control {
+  height: 44px;
+  font-size: var(--text-md);
+}
+
 .field--md .field__control {
-  height: 36px;
+  height: 38px;
 }
 
 .field--sm .field__control {
-  height: 30px;
+  height: 32px;
   font-size: var(--text-sm);
 }
 
 .field__control::placeholder {
-  color: var(--text-faint);
+  color: var(--color-text-faint);
 }
 
 .field__control:disabled {

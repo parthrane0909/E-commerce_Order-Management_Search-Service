@@ -20,7 +20,6 @@ const router = useRouter()
 const route = useRoute()
 
 function onSuccess() {
-  // Redirect to the intended page or storefront
   const redirect = route.query.redirect || '/'
   router.replace(redirect)
 }
@@ -33,28 +32,28 @@ function onSuccess() {
   align-items: center;
   justify-content: center;
   padding: var(--space-6) var(--space-4);
-  background: var(--surface);
+  background: var(--color-bg);
 }
 
 .login-view__card {
   width: 100%;
   max-width: 400px;
-  background: var(--surface);
-  border: 1px solid var(--border);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
   border-radius: var(--radius);
-  box-shadow: var(--shadow-2);
+  box-shadow: var(--shadow-lg);
 }
 
 .login-view__header {
   padding: var(--space-5) var(--space-5) var(--space-3);
-  border-bottom: 1px solid var(--border);
+  border-bottom: 1px solid var(--color-border);
 }
 
 .brand {
   display: inline-flex;
   align-items: center;
   gap: var(--space-2);
-  color: var(--text);
+  color: var(--color-text);
   font-weight: var(--fw-semibold);
   font-size: var(--text-md);
 }
@@ -66,8 +65,8 @@ function onSuccess() {
   width: 32px;
   height: 32px;
   border-radius: var(--radius-sm);
-  background: var(--accent);
-  color: var(--on-accent);
+  background: var(--color-primary);
+  color: var(--color-on-primary);
   font-size: var(--text-base);
   font-weight: var(--fw-semibold);
 }

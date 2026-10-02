@@ -38,9 +38,9 @@ const style = computed(() => {
   display: block;
   background: linear-gradient(
     90deg,
-    var(--surface-3) 25%,
-    var(--surface-2) 37%,
-    var(--surface-3) 63%
+    var(--color-border) 25%,
+    var(--color-surface-hover) 37%,
+    var(--color-border) 63%
   );
   background-size: 400% 100%;
   animation: skeleton-shimmer 1.4s ease infinite;
@@ -50,7 +50,7 @@ const style = computed(() => {
 .skeleton--text {
   height: 12px;
   width: 100%;
-  border-radius: 999px;
+  border-radius: var(--radius-full);
 }
 
 .skeleton--block {
@@ -71,7 +71,7 @@ const style = computed(() => {
 }
 
 .skeleton--card {
-  height: 268px;
+  height: 280px;
   width: 100%;
   border-radius: var(--radius);
 }
@@ -113,6 +113,14 @@ const style = computed(() => {
 @media (max-width: 560px) {
   .skeleton-group--card {
     grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  .skeleton {
+    animation-duration: 0.01ms;
+    animation-iteration-count: 1;
   }
 }
 </style>

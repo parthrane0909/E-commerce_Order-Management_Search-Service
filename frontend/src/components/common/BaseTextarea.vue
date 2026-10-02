@@ -49,8 +49,8 @@ function onInput(event) {
 .field {
   display: block;
   width: 100%;
-  background: var(--surface);
-  border: 1px solid var(--border-strong);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border-strong);
   border-radius: var(--radius-sm);
   transition:
     border-color var(--transition),
@@ -58,20 +58,20 @@ function onInput(event) {
 }
 
 .field:hover:not(.field--disabled) {
-  border-color: var(--text-faint);
+  border-color: var(--color-text-faint);
 }
 
 .field:focus-within {
-  border-color: var(--accent);
+  border-color: var(--color-primary);
   box-shadow: var(--focus-ring);
 }
 
 .field--invalid {
-  border-color: var(--danger);
+  border-color: var(--color-danger);
 }
 
 .field--disabled {
-  background: var(--surface-2);
+  background: var(--color-surface-hover);
   cursor: not-allowed;
 }
 
@@ -89,7 +89,7 @@ function onInput(event) {
 }
 
 .field__control::placeholder {
-  color: var(--text-faint);
+  color: var(--color-text-faint);
 }
 
 .field__control:disabled {

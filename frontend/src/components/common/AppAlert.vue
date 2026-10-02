@@ -47,9 +47,9 @@ const role = computed(() => (props.tone === 'danger' || props.tone === 'warning'
   align-items: flex-start;
   gap: var(--space-2);
   padding: var(--space-3);
-  border: 1px solid var(--border);
+  border: 1px solid var(--color-border);
   border-radius: var(--radius-sm);
-  background: var(--surface-2);
+  background: var(--color-surface-hover);
   font-size: var(--text-base);
 }
 
@@ -66,10 +66,11 @@ const role = computed(() => (props.tone === 'danger' || props.tone === 'warning'
 .alert__title {
   font-weight: var(--fw-semibold);
   margin-bottom: 2px;
+  color: var(--color-text);
 }
 
 .alert__message {
-  color: var(--text-muted);
+  color: var(--color-text-muted);
   line-height: var(--lh-base);
 }
 
@@ -83,51 +84,51 @@ const role = computed(() => (props.tone === 'danger' || props.tone === 'warning'
   border: 0;
   border-radius: var(--radius-sm);
   background: transparent;
-  color: var(--text-muted);
+  color: var(--color-text-muted);
   cursor: pointer;
 }
 
 .alert__close:hover {
-  background: rgba(18, 22, 29, 0.06);
+  background: var(--color-border);
 }
 
 .alert--info {
-  background: var(--info-soft);
-  border-color: var(--info-border);
+  background: var(--color-info-soft);
+  border-color: var(--color-info-border);
 }
 
 .alert--info .alert__icon,
 .alert--info .alert__message {
-  color: var(--info);
+  color: var(--color-info);
 }
 
 .alert--success {
-  background: var(--success-soft);
-  border-color: var(--success-border);
+  background: var(--color-success-soft);
+  border-color: var(--color-success-border);
 }
 
 .alert--success .alert__icon,
 .alert--success .alert__message {
-  color: var(--success);
+  color: var(--color-success);
 }
 
 .alert--warning {
-  background: var(--warning-soft);
-  border-color: var(--warning-border);
+  background: var(--color-warning-soft);
+  border-color: var(--color-warning-border);
 }
 
 .alert--warning .alert__icon,
 .alert--warning .alert__message {
-  color: var(--warning);
+  color: var(--color-warning);
 }
 
 .alert--danger {
-  background: var(--danger-soft);
-  border-color: var(--danger-border);
+  background: var(--color-danger-soft);
+  border-color: var(--color-danger-border);
 }
 
 .alert--danger .alert__icon,
 .alert--danger .alert__message {
-  color: var(--danger);
+  color: var(--color-danger);
 }
 </style>

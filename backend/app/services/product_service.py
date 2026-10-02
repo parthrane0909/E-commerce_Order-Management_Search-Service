@@ -27,6 +27,7 @@ def _to_response(document: dict[str, Any]) -> ProductResponse:
     payload.setdefault("attributes", {})
     payload.setdefault("variants", [])
     payload.setdefault("active", True)
+    payload.setdefault("image_url", None)
     payload.setdefault("created_at", None)
     payload.setdefault("updated_at", None)
     return ProductResponse.model_validate(payload)

@@ -1,0 +1,28 @@
+<svg width="400" height="300" viewBox="0 0 400 300" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bg-default" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#fafafa"/>
+      <stop offset="100%" style="stop-color:#f0f0f0"/>
+    </linearGradient>
+    <pattern id="grid" width="20" height="20" patternUnits="userSpaceOnUse">
+      <path d="M 20 0 L 0 0 0 20" fill="none" stroke="#e0e0e0" stroke-width="0.5"/>
+    </pattern>
+  </defs>
+  <rect width="400" height="300" fill="url(#bg-default)"/>
+  <rect width="400" height="300" fill="url(#grid)"/>
+  
+  <g transform="translate(200, 150)">
+    <circle cx="0" cy="0" r="60" fill="none" stroke="#e0e0e0" stroke-width="2" stroke-dasharray="10,10"/>
+    <circle cx="0" cy="0" r="40" fill="none" stroke="#e8e8e8" stroke-width="1"/>
+    
+    <svg width="80" height="80" x="-40" y="-40" viewBox="0 0 24 24" fill="none" stroke="#ccc" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M12 3.5L4.5 7.2v9.6L12 20.5l7.5-3.7V7.2L12 3.5Z"/>
+      <path d="M4.5 7.2L12 11l7.5-3.8"/>
+      <path d="M12 11v9.5"/>
+    </svg>
+  </g>
+  
+  <text x="200" y="220" font-family="system-ui, sans-serif" font-size="12" fill="#ccc" text-anchor="middle">Product Image</text>
+  
+  <text x="380" y="285" font-family="system-ui, sans-serif" font-size="10" fill="#aaa" text-anchor="end" opacity="0.3">Meridian</text>
+</svg>

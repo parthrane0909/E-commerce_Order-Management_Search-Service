@@ -1,68 +1,76 @@
 <template>
-  <section class="filters" :class="{ 'filters--collapsed': collapsed }">
-    <div class="filters__header" @click="collapsed = !collapsed">
-      <span class="filters__title">
-        <AppIcon name="sliders" :size="16" />
+  <section class="filters" :class="{ 'filters--open': !collapsed }">
+    <button
+      type="button"
+      class="filters__toggle"
+      @click="collapsed = !collapsed"
+      :aria-expanded="!collapsed"
+      aria-controls="filters-content"
+    >
+      <span class="filters__label">
+        <AppIcon name="filter" :size="16" />
         Filters
       </span>
-      <AppIcon :name="collapsed ? 'chevronDown' : 'chevronUp'" :size="16" class="filters__toggle" />
+      <AppIcon :name="collapsed ? 'chevronDown' : 'chevronUp'" :size="16" class="filters__toggle-icon" />
+    </button>
+
+    <div
+      id="filters-content"
+      class="filters__content"
+      v-show="!collapsed"
+      role="region"
+      aria-label="Product filters"
+    >
+      <Transition name="filter-fade">
+        <div class="filters__inner">
+          <div class="filters__group">
+            <label for="category-select" class="filters__group-label">Category</label>
+            <BaseSelect
+              id="category-select"
+              class="filters__select"
+              :model-value="category"
+              :options="categoryOptions"
+              placeholder="All categories"
+              aria-label="Filter by category"
+              @update:model-value="emit('update:category', $event)"
+            />
+          </div>
+
+          <div class="filters__group">
+            <label for="sort-select" class="filters__group-label">Sort</label>
+            <BaseSelect
+              id="sort-select"
+              class="filters__select"
+              :model-value="sort"
+              :options="SORT_OPTIONS"
+              aria-label="Sort products"
+              @update:model-value="emit('update:sort', $event)"
+            />
+          </div>
+
+          <div v-if="activeCount > 0" class="filters__actions">
+            <BaseButton
+              variant="ghost"
+              size="sm"
+              icon="refresh"
+              @click="emit('reset')"
+            >
+              Clear ({{ activeCount }})
+            </BaseButton>
+          </div>
+        </div>
+      </Transition>
     </div>
-
-    <Transition name="collapse">
-      <div v-show="!collapsed" class="filters__content">
-        <div class="filters__row">
-          <BaseInput
-            class="filters__search"
-            :model-value="search"
-            icon="search"
-            placeholder="Search products…"
-            aria-label="Search products"
-            @update:model-value="emit('update:search', $event)"
-          />
-
-          <BaseSelect
-            class="filters__select"
-            :model-value="category"
-            :options="categoryOptions"
-            placeholder="All categories"
-            aria-label="Filter by category"
-            @update:model-value="emit('update:category', $event)"
-          />
-
-          <BaseSelect
-            class="filters__select"
-            :model-value="sort"
-            :options="SORT_OPTIONS"
-            aria-label="Sort products"
-            @update:model-value="emit('update:sort', $event)"
-          />
-        </div>
-
-        <div v-if="activeCount > 0" class="filters__actions">
-          <BaseButton
-            variant="ghost"
-            icon="refresh"
-            @click="emit('reset')"
-          >
-            Reset ({{ activeCount }})
-          </BaseButton>
-        </div>
-      </div>
-    </Transition>
   </section>
 </template>
 
 <script setup>
 import { computed, ref } from 'vue'
-import BaseInput from '../common/BaseInput.vue'
 import BaseSelect from '../common/BaseSelect.vue'
 import BaseButton from '../common/BaseButton.vue'
 import AppIcon from '../common/AppIcon.vue'
-import AppAlert from '../common/AppAlert.vue'
-import LoadingSkeleton from '../common/LoadingSkeleton.vue'
 
 const props = defineProps({
-  search: { type: String, default: '' },
   category: { type: String, default: '' },
   sort: { type: String, default: 'newest' },
   selectedTags: { type: Array, default: () => [] },
@@ -73,14 +81,13 @@ const props = defineProps({
 })
 
 const emit = defineEmits([
-  'update:search',
   'update:category',
   'update:sort',
   'update:selectedTags',
   'reset',
 ])
 
-const collapsed = ref(false)
+const collapsed = ref(true)
 
 const SORT_OPTIONS = [
   { value: 'newest', label: 'Newest first' },
@@ -98,7 +105,6 @@ const categoryOptions = computed(() =>
 
 const activeCount = computed(() => {
   let count = 0
-  if (props.search.trim()) count += 1
   if (props.category) count += 1
   if (props.sort !== 'newest') count += 1
   return count
@@ -107,101 +113,146 @@ const activeCount = computed(() => {
 
 <style scoped>
 .filters {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  box-shadow: var(--shadow-1);
-  overflow: hidden;
-}
-
-.filters__header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: var(--space-3) var(--space-4);
-  background: var(--surface-2);
-  border-bottom: 1px solid var(--border);
-  cursor: pointer;
-  user-select: none;
-}
-
-.filters__title {
-  display: flex;
-  align-items: center;
-  gap: var(--space-2);
-  font-size: var(--text-sm);
-  font-weight: var(--fw-semibold);
-  color: var(--text);
+  background: transparent;
+  border: none;
+  border-radius: 0;
+  box-shadow: none;
 }
 
 .filters__toggle {
-  color: var(--text-muted);
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  background: var(--color-surface);
+  color: var(--color-text);
+  font-size: var(--text-sm);
+  font-weight: var(--fw-medium);
+  cursor: pointer;
+  transition:
+    border-color var(--transition),
+    background-color var(--transition),
+    color var(--transition);
+}
+
+.filters__toggle:hover {
+  border-color: var(--color-primary);
+  background: var(--color-primary-soft);
+  color: var(--color-primary-hover);
+}
+
+.filters__toggle:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+}
+
+.filters__label {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+}
+
+.filters__toggle-icon {
+  color: var(--color-text-muted);
   transition: transform var(--transition);
 }
 
 .filters__content {
-  padding: var(--space-4);
+  overflow: hidden;
 }
 
-.filters__row {
+.filters__inner {
+  padding: var(--space-5) 0;
   display: flex;
-  align-items: center;
-  gap: var(--space-3);
-  flex-wrap: wrap;
-  margin-bottom: var(--space-4);
+  flex-direction: column;
+  gap: var(--space-4);
+  animation: filter-fade-in var(--duration-base) var(--transition) forwards;
 }
 
-.filters__search {
-  flex: 1 1 240px;
-  min-width: 180px;
+@keyframes filter-fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.filters__group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.filters__group-label {
+  font-size: var(--text-xs);
+  font-weight: var(--fw-semibold);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--color-text-muted);
 }
 
 .filters__select {
-  flex: 0 1 180px;
+  flex: 0 1 200px;
+  min-width: 180px;
 }
 
 .filters__actions {
   padding-top: var(--space-3);
-  border-top: 1px solid var(--border);
+  border-top: 1px solid var(--color-border);
+  display: flex;
+  justify-content: flex-end;
 }
 
 @media (max-width: 640px) {
+  .filters {
+    margin: 0 calc(var(--space-4) * -1);
+    padding: 0 var(--space-4);
+    border-top: 1px solid var(--color-border);
+    border-bottom: 1px solid var(--color-border);
+  }
+
+  .filters__toggle {
+    width: 100%;
+    justify-content: space-between;
+    border-radius: 0;
+    border-left: none;
+    border-right: none;
+  }
+
   .filters__select {
-    flex: 1 1 140px;
-  }
-
-  .filters__row {
-    flex-direction: column;
-    align-items: stretch;
-  }
-
-  .filters__search {
-    min-width: 0;
-  }
-
-  .filters__select {
+    flex: 1 1 100%;
     width: 100%;
   }
 }
 
 /* Collapse animation */
-.collapse-enter-active,
-.collapse-leave-active {
-  transition: max-height 0.25s ease, opacity 0.2s ease, padding 0.25s ease;
+.filter-fade-enter-active,
+.filter-fade-leave-active {
+  transition: opacity var(--duration-base) var(--transition), max-height var(--duration-base) var(--transition);
   overflow: hidden;
 }
 
-.collapse-enter-from,
-.collapse-leave-to {
-  max-height: 0;
+.filter-fade-enter-from,
+.filter-fade-leave-to {
   opacity: 0;
-  padding-top: 0;
-  padding-bottom: 0;
+  max-height: 0;
 }
 
-.collapse-enter-to,
-.collapse-leave-from {
-  max-height: 1000px;
-  opacity: 1;
+.filter-fade-enter-to,
+.filter-fade-leave-from {
+  max-height: 500px;
+}
+
+/* Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  .filter-fade-enter-active,
+  .filter-fade-leave-active {
+    transition-duration: 0.01ms;
+  }
 }
 </style>

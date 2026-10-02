@@ -18,7 +18,7 @@ defineProps({
   display: inline-flex;
   align-items: center;
   gap: var(--space-1);
-  border-radius: 999px;
+  border-radius: var(--radius-full);
   font-weight: var(--fw-medium);
   white-space: nowrap;
   line-height: 1;
@@ -30,7 +30,7 @@ defineProps({
 }
 
 .badge--sm {
-  font-size: 11px;
+  font-size: 10px;
   padding: 3px 8px;
 }
 
@@ -43,32 +43,37 @@ defineProps({
 }
 
 .badge--neutral {
-  background: var(--surface-3);
-  color: var(--text-muted);
+  background: var(--color-border);
+  color: var(--color-text-muted);
 }
 
-.badge--accent {
-  background: var(--accent-soft);
-  color: var(--accent-text);
+.badge--primary {
+  background: var(--color-primary-soft);
+  color: var(--color-primary-hover);
 }
 
 .badge--success {
-  background: var(--success-soft);
-  color: var(--success);
+  background: var(--color-success-soft);
+  color: var(--color-success);
 }
 
 .badge--warning {
-  background: var(--warning-soft);
-  color: var(--warning);
+  background: var(--color-warning-soft);
+  color: var(--color-warning);
 }
 
 .badge--danger {
-  background: var(--danger-soft);
-  color: var(--danger);
+  background: var(--color-danger-soft);
+  color: var(--color-danger);
 }
 
 .badge--info {
-  background: var(--info-soft);
-  color: var(--info);
+  background: var(--color-info-soft);
+  color: var(--color-info);
+}
+
+.badge--teal {
+  background: var(--color-teal-soft);
+  color: var(--color-teal);
 }
 </style>

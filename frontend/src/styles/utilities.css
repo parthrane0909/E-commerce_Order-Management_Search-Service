@@ -1,6 +1,50 @@
 /* Small shared utility classes. Nothing here should encode page-specific
    layout — components own their scoped styles. */
 
+:root {
+  /* Legacy token aliases for backward compatibility during migration */
+  --bg: var(--color-bg);
+  --surface: var(--color-surface);
+  --surface-2: var(--color-surface-hover);
+  --surface-3: var(--color-border);
+  --border: var(--color-border);
+  --border-strong: var(--color-border-strong);
+  --text: var(--color-text);
+  --text-muted: var(--color-text-muted);
+  --text-faint: var(--color-text-faint);
+  --inverse: var(--color-on-primary);
+  --accent: var(--color-primary);
+  --accent-hover: var(--color-primary-hover);
+  --accent-active: var(--color-primary-active);
+  --accent-soft: var(--color-primary-soft);
+  --accent-soft-border: var(--color-primary-border);
+  --accent-text: var(--color-primary-hover);
+  --on-accent: var(--color-on-primary);
+  --success: var(--color-success);
+  --success-soft: var(--color-success-soft);
+  --success-border: var(--color-success-border);
+  --warning: var(--color-warning);
+  --warning-soft: var(--color-warning-soft);
+  --warning-border: var(--color-warning-border);
+  --danger: var(--color-danger);
+  --danger-hover: var(--color-danger-hover);
+  --danger-soft: var(--color-danger-soft);
+  --danger-border: var(--color-danger-border);
+  --info: var(--color-info);
+  --info-soft: var(--color-info-soft);
+  --info-border: var(--color-info-border);
+  --danger-text: var(--color-danger);
+
+  --shadow-1: var(--shadow-sm);
+  --shadow-2: var(--shadow-md);
+}
+
+/* NOTE: Do NOT alias a token to itself here (e.g. `--space-4: var(--space-4)`).
+   A custom property that references itself is a cycle and resolves to the
+   guaranteed-invalid value, which silently invalidates every declaration that
+   uses it — that broke spacing, radii and containers site-wide. The canonical
+   values live in tokens.css and are intentionally not redeclared above. */
+
 /* ---------------- layout helpers ---------------- */
 
 .stack {
@@ -21,6 +65,12 @@
   gap: var(--space-5);
 }
 
+.stack-xl {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+}
+
 .row {
   display: flex;
   align-items: center;
@@ -31,6 +81,12 @@
   display: flex;
   align-items: center;
   gap: var(--space-2);
+}
+
+.row-lg {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
 }
 
 .row-between {
@@ -49,39 +105,57 @@
   min-width: 0;
 }
 
+/* Container utilities — the one content container used across the app.
+   Width comes from `--content-max` (1320px) and side padding from
+   `--container-pad` (32 / 24 / 16 across desktop / tablet / mobile). */
+.container {
+  width: 100%;
+  max-width: var(--content-max);
+  margin: 0 auto;
+  padding: 0 var(--container-pad);
+}
+
+.container-admin {
+  width: 100%;
+  max-width: var(--admin-max);
+  margin: 0 auto;
+  padding: 0 var(--container-pad);
+}
+
+.container-narrow {
+  max-width: 800px;
+}
+
+/* Section spacing */
+.section {
+  padding: var(--space-8) 0;
+}
+
+.section-sm {
+  padding: var(--space-5) 0;
+}
+
+.section-lg {
+  padding: var(--space-10) 0;
+}
+
 /* ---------------- text ---------------- */
 
-.muted {
-  color: var(--text-muted);
-}
+.muted { color: var(--color-text-muted); }
+.faint { color: var(--color-text-faint); }
 
-.faint {
-  color: var(--text-faint);
-}
+.text-xs { font-size: var(--text-xs); }
+.text-sm { font-size: var(--text-sm); }
+.text-md { font-size: var(--text-md); }
+.text-lg { font-size: var(--text-lg); }
+.text-xl { font-size: var(--text-xl); }
+.text-2xl { font-size: var(--text-2xl); }
 
-.text-xs {
-  font-size: var(--text-xs);
-}
+.medium { font-weight: var(--fw-medium); }
+.semibold { font-weight: var(--fw-semibold); }
+.bold { font-weight: var(--fw-bold); }
 
-.text-sm {
-  font-size: var(--text-sm);
-}
-
-.text-md {
-  font-size: var(--text-md);
-}
-
-.medium {
-  font-weight: var(--fw-medium);
-}
-
-.semibold {
-  font-weight: var(--fw-semibold);
-}
-
-.tabular {
-  font-variant-numeric: tabular-nums;
-}
+.tabular { font-variant-numeric: tabular-nums; }
 
 .truncate {
   overflow: hidden;
@@ -93,6 +167,14 @@
   display: -webkit-box;
   -webkit-line-clamp: 2;
   line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.line-clamp-3 {
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  line-clamp: 3;
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
@@ -111,30 +193,81 @@
   border: 0;
 }
 
+/* Skip link for keyboard navigation */
+.skip-link {
+  position: absolute;
+  top: -100%;
+  left: var(--space-4);
+  background: var(--color-primary);
+  color: var(--color-on-primary);
+  padding: var(--space-2) var(--space-4);
+  border-radius: var(--radius);
+  z-index: 100;
+  font-weight: var(--fw-medium);
+  transition: top var(--transition-fast);
+}
+
+.skip-link:focus {
+  top: var(--space-4);
+}
+
 /* ---------------- responsive visibility ---------------- */
 
-@media (max-width: 900px) {
-  .only-desktop {
-    display: none !important;
-  }
+/* Mobile-only helpers (used by the storefront header). */
+.only-mobile {
+  display: none !important;
 }
 
-@media (min-width: 901px) {
+@media (max-width: 1024px) {
   .only-mobile {
-    display: none !important;
+    display: flex !important;
   }
 }
 
-@media (max-width: 640px) {
+.hide-mobile {
+  display: flex;
+}
+
+@media (max-width: 1024px) {
   .hide-mobile {
     display: none !important;
   }
+}
+
+@media (max-width: 1024px) {
+  .hide-lg { display: none !important; }
+}
+
+@media (max-width: 768px) {
+  .hide-md { display: none !important; }
+  .only-md { display: block !important; }
+}
+
+@media (min-width: 769px) {
+  .only-md { display: none !important; }
+}
+
+@media (max-width: 640px) {
+  .hide-sm { display: none !important; }
+  .only-sm { display: block !important; }
+}
+
+@media (min-width: 641px) {
+  .only-sm { display: none !important; }
+}
+
+@media (max-width: 480px) {
+  .hide-xs { display: none !important; }
 }
 
 /* ---------------- shared surfaces ---------------- */
 
 .table-scroll {
   width: 100%;
+  /* position: relative so absolutely positioned descendants (e.g. .sr-only
+     labels inside table cells) use the scroller as their containing block and
+     stay clipped to it — otherwise they widen the whole document. */
+  position: relative;
   overflow-x: auto;
   -webkit-overflow-scrolling: touch;
 }
@@ -149,19 +282,80 @@
   font-weight: var(--fw-semibold);
   letter-spacing: 0.04em;
   text-transform: uppercase;
-  color: var(--text-muted);
+  color: var(--color-text-muted);
   padding: var(--space-2) var(--space-3);
-  border-bottom: 1px solid var(--border);
+  border-bottom: 1px solid var(--color-border);
   white-space: nowrap;
 }
 
 .data-table td {
   padding: var(--space-3);
-  border-bottom: 1px solid var(--border);
+  border-bottom: 1px solid var(--color-border);
   font-size: var(--text-base);
   vertical-align: middle;
 }
 
 .data-table tbody tr:last-child td {
   border-bottom: 0;
+}
+
+.data-table tbody tr:hover td {
+  background: var(--color-surface-hover);
+}
+
+/* Card base */
+.card {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-sm);
+}
+
+.card-hover {
+  transition: box-shadow var(--transition), border-color var(--transition), transform var(--transition);
+}
+
+.card-hover:hover {
+  box-shadow: var(--shadow-md);
+  border-color: var(--color-border-strong);
+  transform: translateY(-2px);
+}
+
+/* Divider */
+.divider {
+  height: 1px;
+  background: var(--color-border);
+  border: 0;
+  margin: var(--space-4) 0;
+}
+
+.divider-lg {
+  margin: var(--space-6) 0;
+}
+
+/* Scrollbar styling (subtle) */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-border-strong) transparent;
+}
+
+*::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+*::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+*::-webkit-scrollbar-thumb {
+  background: var(--color-border-strong);
+  border-radius: var(--radius-full);
+  border: 2px solid transparent;
+  background-clip: content-box;
+}
+
+*::-webkit-scrollbar-thumb:hover {
+  background: var(--color-text-faint);
+  background-clip: content-box;
 }

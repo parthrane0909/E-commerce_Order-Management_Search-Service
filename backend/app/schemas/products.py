@@ -44,6 +44,7 @@ class ProductBase(BaseModel):
         description="Nested variant array, each with its own sku/color/stock",
     )
     active: bool = True
+    image_url: str | None = Field(default=None, max_length=500, examples=["/uploads/products/wireless-mouse.webp"])
 
     @field_validator("category")
     @classmethod
@@ -84,6 +85,7 @@ class ProductUpdate(BaseModel):
     attributes: dict[str, Any] | None = None
     variants: list[VariantCreate] | None = Field(default=None, max_length=20)
     active: bool | None = None
+    image_url: str | None = Field(default=None, max_length=500)
 
     @field_validator("category")
     @classmethod
@@ -124,6 +126,7 @@ class ProductResponse(BaseModel):
     attributes: dict[str, Any]
     variants: list[VariantResponse]
     active: bool
+    image_url: str | None = None
     updated_at: dt.datetime | None = None
     created_at: dt.datetime | None = None
 

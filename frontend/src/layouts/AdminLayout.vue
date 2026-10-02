@@ -131,8 +131,8 @@ async function logout() {
   bottom: 0;
   width: var(--sidebar-w);
   z-index: 50;
-  background: var(--surface);
-  border-right: 1px solid var(--border);
+  background: var(--color-surface);
+  border-right: 1px solid var(--color-border);
   display: flex;
   flex-direction: column;
   gap: var(--space-2);
@@ -145,14 +145,14 @@ async function logout() {
   justify-content: space-between;
   gap: var(--space-2);
   padding-bottom: var(--space-3);
-  border-bottom: 1px solid var(--border);
+  border-bottom: 1px solid var(--color-border);
 }
 
 .brand {
   display: inline-flex;
   align-items: center;
   gap: var(--space-2);
-  color: var(--text);
+  color: var(--color-text);
   font-weight: var(--fw-semibold);
   font-size: var(--text-md);
 }
@@ -168,8 +168,8 @@ async function logout() {
   width: 28px;
   height: 28px;
   border-radius: var(--radius-sm);
-  background: var(--accent);
-  color: var(--on-accent);
+  background: var(--color-primary);
+  color: var(--color-on-primary);
   font-size: var(--text-sm);
   font-weight: var(--fw-semibold);
 }
@@ -181,10 +181,10 @@ async function logout() {
   justify-content: center;
   width: 34px;
   height: 34px;
-  border: 1px solid var(--border-strong);
+  border: 1px solid var(--color-border-strong);
   border-radius: var(--radius-sm);
-  background: var(--surface);
-  color: var(--text);
+  background: var(--color-surface);
+  color: var(--color-text);
   cursor: pointer;
 }
 
@@ -193,7 +193,7 @@ async function logout() {
   font-weight: var(--fw-semibold);
   letter-spacing: 0.06em;
   text-transform: uppercase;
-  color: var(--text-faint);
+  color: var(--color-text-faint);
   padding: var(--space-3) var(--space-2) var(--space-1);
 }
 
@@ -209,26 +209,26 @@ async function logout() {
   gap: var(--space-2);
   padding: 9px 10px;
   border-radius: var(--radius-sm);
-  color: var(--text-muted);
+  color: var(--color-text-muted);
   font-size: var(--text-base);
   transition: background-color var(--transition), color var(--transition);
 }
 
 .sidebar__link:hover {
-  background: var(--surface-2);
-  color: var(--text);
-  text-decoration: none.
+  background: var(--color-surface-hover);
+  color: var(--color-text);
+  text-decoration: none;
 }
 
 .sidebar__link.is-active {
-  background: var(--accent-soft);
-  color: var(--accent-text);
+  background: var(--color-primary-soft);
+  color: var(--color-primary-hover);
   font-weight: var(--fw-medium);
 }
 
 .sidebar__foot {
   margin-top: auto;
-  border-top: 1px solid var(--border);
+  border-top: 1px solid var(--color-border);
   display: flex;
   flex-direction: column;
   gap: var(--space-1);
@@ -243,13 +243,13 @@ async function logout() {
 }
 
 .sidebar__store-link {
-  color: var(--text-muted);
+  color: var(--color-text-muted);
 }
 
 .sidebar__user {
   margin-top: var(--space-3);
   padding-top: var(--space-3);
-  border-top: 1px solid var(--border);
+  border-top: 1px solid var(--color-border);
   display: flex;
   flex-direction: column;
   gap: var(--space-2);
@@ -264,12 +264,12 @@ async function logout() {
 .sidebar__user-name {
   font-size: var(--text-sm);
   font-weight: var(--fw-medium);
-  color: var(--text);
+  color: var(--color-text);
 }
 
 .sidebar__user-role {
   font-size: var(--text-xs);
-  color: var(--text-muted);
+  color: var(--color-text-muted);
   text-transform: uppercase;
 }
 
@@ -302,12 +302,14 @@ async function logout() {
   align-items: center;
   gap: var(--space-3);
   padding: var(--space-4) var(--space-5);
-  background: var(--surface);
-  border-bottom: 1px solid var(--border).
+  background: var(--color-surface);
+  border-bottom: 1px solid var(--color-border).
 }
 
 .admin__title {
   font-size: var(--text-lg);
+  font-weight: var(--fw-semibold);
+  color: var(--color-text);
 }
 
 .admin__content {
@@ -324,7 +326,7 @@ async function logout() {
   .sidebar {
     transform: translateX(-100%);
     transition: transform var(--transition);
-    box-shadow: var(--shadow-2);
+    box-shadow: var(--shadow-lg);
   }
 
   .admin--nav-open .sidebar {
@@ -336,7 +338,7 @@ async function logout() {
     position: fixed;
     inset: 0;
     z-index: 45;
-    background: rgba(18, 22, 29, 0.45);
+    background: rgba(26, 26, 46, 0.45);
   }
 
   .admin__main {

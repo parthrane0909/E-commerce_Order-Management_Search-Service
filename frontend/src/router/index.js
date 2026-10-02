@@ -63,7 +63,17 @@ const routes = [
 const router = createRouter({
   history: createWebHistory(),
   routes,
-  scrollBehavior() {
+  scrollBehavior(to, from, savedPosition) {
+    if (savedPosition) return savedPosition
+
+    // Query-only changes on the same page are always search/filter actions
+    // (q, category, sort, page). The components that trigger them already run
+    // their own smooth scroll to #products-section — letting the router jump
+    // to the top here would cancel it.
+    const isFilterChange =
+      to.path === from.path && ['q', 'category', 'sort', 'page'].some((key) => key in to.query)
+    if (isFilterChange) return false
+
     return { top: 0 }
   },
 })

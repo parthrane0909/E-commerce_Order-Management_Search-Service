@@ -127,6 +127,7 @@ services:
       - "${API_PORT:-8000}:8000"
     volumes:
       - ./backend:/app
+      - uploads_data:/app/uploads
     depends_on:
       postgres:
         condition: service_healthy
@@ -155,6 +156,7 @@ services:
     command: celery -A app.tasks.celery_app worker --loglevel=INFO --concurrency=2
     volumes:
       - ./backend:/app
+      - uploads_data:/app/uploads
     depends_on:
       postgres:
         condition: service_healthy
@@ -255,3 +257,4 @@ volumes:
   elasticsearch_data:
   rabbitmq_data:
   frontend_node_modules:
+  uploads_data:

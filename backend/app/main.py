@@ -10,6 +10,7 @@ from collections.abc import AsyncIterator
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 
 from app import __version__
 from app.api import auth, health, orders, products, search, users
@@ -98,6 +99,29 @@ app.add_middleware(
 )
 
 register_exception_handlers(app)
+
+
+def mount_upload_storage() -> None:
+    """Serve locally stored product images at ``/uploads/…``.
+
+    Admin uploads are written to ``settings.uploads_dir`` and their public URL
+    (``/uploads/products/<file>``) is persisted in MongoDB.  The directory is a
+    named docker volume, so the files survive restarts.
+    """
+    uploads_dir = settings.uploads_path
+    try:
+        uploads_dir.mkdir(parents=True, exist_ok=True)
+    except OSError as exc:  # pragma: no cover - depends on the host FS
+        logger.warning("uploads directory %s not usable: %s", uploads_dir, exc)
+        return
+    app.mount(
+        "/uploads",
+        StaticFiles(directory=str(uploads_dir), check_dir=True),
+        name="uploads",
+    )
+
+
+mount_upload_storage()
 
 app.include_router(products.router)
 app.include_router(orders.router)

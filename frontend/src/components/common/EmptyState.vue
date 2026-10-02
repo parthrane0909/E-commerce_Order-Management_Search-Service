@@ -27,7 +27,7 @@ defineProps({
   flex-direction: column;
   align-items: center;
   text-align: center;
-  gap: var(--space-2);
+  gap: var(--space-3);
   padding: var(--space-7) var(--space-4);
 }
 
@@ -35,23 +35,25 @@ defineProps({
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 52px;
-  height: 52px;
+  width: 56px;
+  height: 56px;
   border-radius: 50%;
-  background: var(--surface-3);
-  color: var(--text-muted);
+  background: var(--color-primary-soft);
+  color: var(--color-primary-hover);
   margin-bottom: var(--space-1);
 }
 
 .empty__title {
   font-size: var(--text-md);
   font-weight: var(--fw-semibold);
+  color: var(--color-text);
 }
 
 .empty__message {
   max-width: 440px;
-  color: var(--text-muted);
+  color: var(--color-text-muted);
   font-size: var(--text-base);
+  line-height: var(--lh-base);
 }
 
 .empty__actions {

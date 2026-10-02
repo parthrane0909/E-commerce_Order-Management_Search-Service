@@ -44,7 +44,7 @@
       <header class="order-view__head">
         <div class="order-view__title">
           <div class="row-sm wrap">
-            <h1 class="order-view__number tabular">{{ order.order_number }}</h1>
+            <h2 class="order-view__number tabular">{{ order.order_number }}</h2>
             <AppBadge tone="info" size="sm">Source of truth: PostgreSQL</AppBadge>
           </div>
           <p class="text-sm muted">

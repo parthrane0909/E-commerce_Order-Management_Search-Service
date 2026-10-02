@@ -48,7 +48,6 @@ watch(
         }, toast.timeout),
       )
     })
-    // Drop timers for toasts that were dismissed manually.
     const alive = new Set(list.map((toast) => toast.id))
     timers.forEach((timer, id) => {
       if (!alive.has(id)) {
@@ -84,11 +83,11 @@ onBeforeUnmount(() => {
   align-items: flex-start;
   gap: var(--space-2);
   padding: var(--space-3);
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-left: 3px solid var(--text-faint);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-left: 3px solid var(--color-text-faint);
   border-radius: var(--radius);
-  box-shadow: var(--shadow-2);
+  box-shadow: var(--shadow-lg);
   pointer-events: auto;
 }
 
@@ -107,7 +106,7 @@ onBeforeUnmount(() => {
   min-width: 0;
   font-size: var(--text-base);
   line-height: var(--lh-base);
-  color: var(--text);
+  color: var(--color-text);
 }
 
 .toast__close {
@@ -120,49 +119,49 @@ onBeforeUnmount(() => {
   border: 0;
   border-radius: var(--radius-sm);
   background: transparent;
-  color: var(--text-faint);
+  color: var(--color-text-faint);
   cursor: pointer;
 }
 
 .toast__close:hover {
-  background: var(--surface-2);
-  color: var(--text);
+  background: var(--color-surface-hover);
+  color: var(--color-text);
 }
 
 .toast--success {
-  border-left-color: var(--success);
+  border-left-color: var(--color-success);
 }
 
 .toast--success .toast__icon {
-  background: var(--success-soft);
-  color: var(--success);
+  background: var(--color-success-soft);
+  color: var(--color-success);
 }
 
 .toast--error {
-  border-left-color: var(--danger);
+  border-left-color: var(--color-danger);
 }
 
 .toast--error .toast__icon {
-  background: var(--danger-soft);
-  color: var(--danger);
+  background: var(--color-danger-soft);
+  color: var(--color-danger);
 }
 
 .toast--warning {
-  border-left-color: var(--warning);
+  border-left-color: var(--color-warning);
 }
 
 .toast--warning .toast__icon {
-  background: var(--warning-soft);
-  color: var(--warning);
+  background: var(--color-warning-soft);
+  color: var(--color-warning);
 }
 
 .toast--info {
-  border-left-color: var(--info);
+  border-left-color: var(--color-info);
 }
 
 .toast--info .toast__icon {
-  background: var(--info-soft);
-  color: var(--info);
+  background: var(--color-info-soft);
+  color: var(--color-info);
 }
 
 .toast-enter-active,
@@ -176,5 +175,13 @@ onBeforeUnmount(() => {
 .toast-leave-to {
   opacity: 0;
   transform: translateX(16px);
+}
+
+/* Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  .toast-enter-active,
+  .toast-leave-active {
+    transition-duration: 0.01ms;
+  }
 }
 </style>

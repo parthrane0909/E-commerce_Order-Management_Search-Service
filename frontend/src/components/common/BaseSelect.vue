@@ -72,8 +72,8 @@ function onChange(event) {
   align-items: center;
   position: relative;
   width: 100%;
-  background: var(--surface);
-  border: 1px solid var(--border-strong);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border-strong);
   border-radius: var(--radius-sm);
   transition:
     border-color var(--transition),
@@ -81,21 +81,21 @@ function onChange(event) {
 }
 
 .field:hover:not(.field--disabled) {
-  border-color: var(--text-faint);
+  border-color: var(--color-text-faint);
 }
 
 .field:focus-within {
-  border-color: var(--accent);
+  border-color: var(--color-primary);
   box-shadow: var(--focus-ring);
 }
 
 .field--invalid {
-  border-color: var(--danger);
+  border-color: var(--color-danger);
 }
 
 .field--disabled {
-  background: var(--surface-2);
-  color: var(--text-faint);
+  background: var(--color-surface-hover);
+  color: var(--color-text-faint);
   cursor: not-allowed;
 }
 
@@ -112,12 +112,17 @@ function onChange(event) {
   cursor: inherit;
 }
 
+.field--lg .field__control {
+  height: 44px;
+  font-size: var(--text-md);
+}
+
 .field--md .field__control {
-  height: 36px;
+  height: 38px;
 }
 
 .field--sm .field__control {
-  height: 30px;
+  height: 32px;
   font-size: var(--text-sm);
   padding-right: var(--space-5);
 }
@@ -129,7 +134,7 @@ function onChange(event) {
 .field__chevron {
   position: absolute;
   right: var(--space-2);
-  color: var(--text-muted);
+  color: var(--color-text-muted);
   pointer-events: none;
 }
 </style>

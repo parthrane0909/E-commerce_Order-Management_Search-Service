@@ -35,10 +35,10 @@ defineProps({
 
 <style scoped>
 .card {
-  background: var(--surface);
-  border: 1px solid var(--border);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
   border-radius: var(--radius);
-  box-shadow: var(--shadow-1);
+  box-shadow: var(--shadow-sm);
   overflow: hidden;
 }
 
@@ -48,19 +48,20 @@ defineProps({
   justify-content: space-between;
   gap: var(--space-3);
   padding: var(--space-4) var(--space-5);
-  border-bottom: 1px solid var(--border);
+  border-bottom: 1px solid var(--color-border);
 }
 
 .card__title {
-  font-size: var(--text-md);
+  font-size: var(--text-lg);
   font-weight: var(--fw-semibold);
+  color: var(--color-text);
 }
 
 .card__subtitle,
 .card__titles :deep(.card__subtitle) {
   margin-top: 2px;
   font-size: var(--text-sm);
-  color: var(--text-muted);
+  color: var(--color-text-muted);
 }
 
 .card__aside {
@@ -80,7 +81,7 @@ defineProps({
 
 .card__footer {
   padding: var(--space-4) var(--space-5);
-  border-top: 1px solid var(--border);
-  background: var(--surface-2);
+  border-top: 1px solid var(--color-border);
+  background: var(--color-surface-hover);
 }
 </style>

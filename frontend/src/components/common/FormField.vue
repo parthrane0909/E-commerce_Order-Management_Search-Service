@@ -50,11 +50,11 @@ provide('meridian.formFieldId', fieldId)
 .form-field__label {
   font-size: var(--text-sm);
   font-weight: var(--fw-medium);
-  color: var(--text);
+  color: var(--color-text);
 }
 
 .form-field__required {
-  color: var(--danger);
+  color: var(--color-danger);
   margin-left: 2px;
 }
 
@@ -63,7 +63,7 @@ provide('meridian.formFieldId', fieldId)
   align-items: flex-start;
   gap: var(--space-1);
   font-size: var(--text-sm);
-  color: var(--danger);
+  color: var(--color-danger);
 }
 
 .form-field__error .app-icon {
@@ -72,6 +72,6 @@ provide('meridian.formFieldId', fieldId)
 
 .form-field__hint {
   font-size: var(--text-sm);
-  color: var(--text-muted);
+  color: var(--color-text-muted);
 }
 </style>

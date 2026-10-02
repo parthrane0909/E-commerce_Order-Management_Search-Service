@@ -4,6 +4,7 @@
       <div v-if="open" class="drawer-backdrop" @mousedown.self="emit('close')">
         <aside
           class="drawer"
+          v-bind="$attrs"
           :style="{ width }"
           role="dialog"
           aria-modal="true"
@@ -41,10 +42,14 @@
 import { onBeforeUnmount, watch } from 'vue'
 import AppIcon from './AppIcon.vue'
 
+// The root is a <Teleport>, so attribute inheritance is manual: fall-through
+// attributes (e.g. `id="cart-drawer"`) are bound to the <aside> instead.
+defineOptions({ inheritAttrs: false })
+
 const props = defineProps({
   open: Boolean,
   title: { type: String, default: '' },
-  width: { type: String, default: '420px' },
+  width: { type: String, default: '440px' },
 })
 
 const emit = defineEmits(['close'])
@@ -75,7 +80,7 @@ onBeforeUnmount(() => {
   position: fixed;
   inset: 0;
   z-index: 55;
-  background: rgba(18, 22, 29, 0.45);
+  background: rgba(26, 26, 46, 0.5);
 }
 
 .drawer {
@@ -84,8 +89,8 @@ onBeforeUnmount(() => {
   right: 0;
   bottom: 0;
   max-width: 100vw;
-  background: var(--surface);
-  box-shadow: var(--shadow-2);
+  background: var(--color-surface);
+  box-shadow: var(--shadow-xl);
   display: flex;
   flex-direction: column;
 }
@@ -96,12 +101,13 @@ onBeforeUnmount(() => {
   justify-content: space-between;
   gap: var(--space-3);
   padding: var(--space-4) var(--space-5);
-  border-bottom: 1px solid var(--border);
+  border-bottom: 1px solid var(--color-border);
 }
 
 .drawer__title {
-  font-size: var(--text-md);
+  font-size: var(--text-lg);
   font-weight: var(--fw-semibold);
+  color: var(--color-text);
 }
 
 .drawer__close {
@@ -113,14 +119,19 @@ onBeforeUnmount(() => {
   border: 0;
   border-radius: var(--radius-sm);
   background: transparent;
-  color: var(--text-muted);
+  color: var(--color-text-muted);
   cursor: pointer;
   transition: background-color var(--transition), color var(--transition);
 }
 
 .drawer__close:hover {
-  background: var(--surface-2);
-  color: var(--text);
+  background: var(--color-surface-hover);
+  color: var(--color-text);
+}
+
+.drawer__close:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
 }
 
 .drawer__body {
@@ -130,8 +141,8 @@ onBeforeUnmount(() => {
 }
 
 .drawer__footer {
-  border-top: 1px solid var(--border);
-  background: var(--surface-2);
+  border-top: 1px solid var(--color-border);
+  background: var(--color-surface-hover);
   padding: var(--space-4) var(--space-5);
 }
 
@@ -153,5 +164,15 @@ onBeforeUnmount(() => {
 .drawer-fade-enter-from .drawer,
 .drawer-fade-leave-to .drawer {
   transform: translateX(24px);
+}
+
+/* Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  .drawer-fade-enter-active,
+  .drawer-fade-leave-active,
+  .drawer-fade-enter-active .drawer,
+  .drawer-fade-leave-active .drawer {
+    transition-duration: 0.01ms;
+  }
 }
 </style>

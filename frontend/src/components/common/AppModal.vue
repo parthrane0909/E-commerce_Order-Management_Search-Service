@@ -74,7 +74,6 @@ function onKeydown(event) {
     return
   }
 
-  // Lightweight focus trap so keyboard users stay inside the dialog.
   if (event.key === 'Tab') {
     const elements = focusableElements()
     if (!elements.length) return
@@ -123,7 +122,7 @@ onBeforeUnmount(() => {
   position: fixed;
   inset: 0;
   z-index: 60;
-  background: rgba(18, 22, 29, 0.5);
+  background: rgba(26, 26, 46, 0.55);
   display: flex;
   align-items: flex-start;
   justify-content: center;
@@ -132,9 +131,9 @@ onBeforeUnmount(() => {
 }
 
 .modal {
-  background: var(--surface);
+  background: var(--color-surface);
   border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-2);
+  box-shadow: var(--shadow-xl);
   width: 100%;
   max-width: 560px;
   margin: auto;
@@ -158,12 +157,13 @@ onBeforeUnmount(() => {
   justify-content: space-between;
   gap: var(--space-3);
   padding: var(--space-4) var(--space-5);
-  border-bottom: 1px solid var(--border);
+  border-bottom: 1px solid var(--color-border);
 }
 
 .modal__title {
-  font-size: var(--text-md);
+  font-size: var(--text-lg);
   font-weight: var(--fw-semibold);
+  color: var(--color-text);
 }
 
 .modal__close {
@@ -175,14 +175,19 @@ onBeforeUnmount(() => {
   border: 0;
   border-radius: var(--radius-sm);
   background: transparent;
-  color: var(--text-muted);
+  color: var(--color-text-muted);
   cursor: pointer;
   transition: background-color var(--transition), color var(--transition);
 }
 
 .modal__close:hover {
-  background: var(--surface-2);
-  color: var(--text);
+  background: var(--color-surface-hover);
+  color: var(--color-text);
+}
+
+.modal__close:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
 }
 
 .modal__body {
@@ -196,8 +201,8 @@ onBeforeUnmount(() => {
   justify-content: flex-end;
   gap: var(--space-2);
   padding: var(--space-4) var(--space-5);
-  border-top: 1px solid var(--border);
-  background: var(--surface-2);
+  border-top: 1px solid var(--color-border);
+  background: var(--color-surface-hover);
 }
 
 .modal-fade-enter-active,
@@ -228,6 +233,16 @@ onBeforeUnmount(() => {
   .modal__footer {
     flex-direction: column-reverse;
     align-items: stretch;
+  }
+}
+
+/* Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  .modal-fade-enter-active,
+  .modal-fade-leave-active,
+  .modal-fade-enter-active .modal,
+  .modal-fade-leave-active .modal {
+    transition-duration: 0.01ms;
   }
 }
 </style>

@@ -2,15 +2,16 @@ import { describe, it, expect } from 'vitest'
 import { formatCurrency, formatNumber, parseAmount } from '../src/utils/currency'
 
 describe('currency formatting', () => {
-  it('formats money with two decimals and thousands separators', () => {
-    expect(formatCurrency(0)).toBe('$0.00')
-    expect(formatCurrency(384)).toBe('$384.00')
-    expect(formatCurrency(7932.28)).toBe('$7,932.28')
-    expect(formatCurrency(1234567.89)).toBe('$1,234,567.89')
+  it('formats money with two decimals and thousands separators (INR)', () => {
+    expect(formatCurrency(0)).toBe('₹0.00')
+    expect(formatCurrency(384)).toBe('₹384.00')
+    expect(formatCurrency(7932.28)).toBe('₹7,932.28')
+    // Indian numbering: 12,34,567.89 (lakhs/crores)
+    expect(formatCurrency(1234567.89)).toBe('₹12,34,567.89')
   })
 
   it('accepts numeric strings from the API', () => {
-    expect(formatCurrency('27.5')).toBe('$27.50')
+    expect(formatCurrency('27.5')).toBe('₹27.50')
   })
 
   it('returns an em dash for unusable values', () => {
@@ -20,9 +21,10 @@ describe('currency formatting', () => {
     expect(formatCurrency(Number.NaN)).toBe('—')
   })
 
-  it('formats plain counts', () => {
+  it('formats plain counts (Indian numbering)', () => {
     expect(formatNumber(47)).toBe('47')
     expect(formatNumber(7932)).toBe('7,932')
+    expect(formatNumber(1234567)).toBe('12,34,567')
     expect(formatNumber('x')).toBe('—')
   })
 

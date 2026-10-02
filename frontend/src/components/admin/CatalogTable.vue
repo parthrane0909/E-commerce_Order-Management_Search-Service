@@ -3,6 +3,7 @@
     <table class="data-table catalog">
       <thead>
         <tr>
+          <th>Image</th>
           <th>SKU</th>
           <th>Title</th>
           <th>Price</th>
@@ -17,16 +18,18 @@
 
       <tbody v-if="loading">
         <tr v-for="index in 6" :key="index">
-          <td v-for="col in 9" :key="col"><LoadingSkeleton variant="block" :height="14" /></td>
+          <td v-for="col in 10" :key="col"><LoadingSkeleton variant="block" :height="14" /></td>
         </tr>
       </tbody>
 
       <tbody v-else>
         <tr v-for="product in items" :key="product.id">
+          <td class="catalog__image-cell">
+            <ProductThumb :product="product" size="sm" />
+          </td>
           <td><code class="catalog__sku">{{ product.sku }}</code></td>
           <td>
             <div class="row-sm catalog__title-cell">
-              <ProductThumb :product="product" size="sm" />
               <span class="medium truncate" :title="product.title">{{ product.title }}</span>
             </div>
           </td>
@@ -96,11 +99,16 @@ const emit = defineEmits(['edit', 'toggle'])
 <style scoped>
 .catalog__sku {
   font-size: var(--text-xs);
-  background: var(--surface-2);
-  border: 1px solid var(--border);
+  background: var(--color-surface-hover);
+  border: 1px solid var(--color-border);
   border-radius: var(--radius-sm);
   padding: 2px 6px;
   white-space: nowrap;
+}
+
+.catalog__image-cell {
+  width: 48px;
+  padding: var(--space-2) var(--space-3);
 }
 
 .catalog__title-cell {
@@ -118,16 +126,16 @@ const emit = defineEmits(['edit', 'toggle'])
   font-size: 11px;
   padding: 2px 7px;
   border-radius: 999px;
-  background: var(--surface-2);
-  border: 1px solid var(--border);
-  color: var(--text-muted);
+  background: var(--color-surface-hover);
+  border: 1px solid var(--color-border);
+  color: var(--color-text-muted);
   white-space: nowrap;
 }
 
 .tag-chip--more {
-  background: var(--accent-soft);
-  border-color: var(--accent-soft-border);
-  color: var(--accent-text);
+  background: var(--color-primary-soft);
+  border-color: var(--color-primary-border);
+  color: var(--color-primary-hover);
 }
 
 .catalog__actions {

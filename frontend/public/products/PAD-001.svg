@@ -1,0 +1,40 @@
+<svg width="400" height="300" viewBox="0 0 400 300" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bg30" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#f0f0f0"/>
+      <stop offset="100%" style="stop-color:#e8e8e8"/>
+    </linearGradient>
+    <filter id="shadow30" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="4" stdDeviation="8" flood-color="#000000" flood-opacity="0.1"/>
+    </filter>
+  </defs>
+  <rect width="400" height="300" fill="url(#bg30)"/>
+  
+  <g transform="translate(200, 150)" filter="url(#shadow31)">
+    <rect x="-180" y="-100" width="360" height="200" rx="8" fill="#1a1a1a"/>
+    <rect x="-175" y="-95" width="350" height="190" rx="6" fill="#0f0f0f"/>
+    
+    <g fill="#333" opacity="0.3">
+      <rect x="-165" y="-90" width="330" height="180" rx="4" fill="none" stroke="#333" stroke-width="0.5"/>
+      <g stroke="#333" stroke-width="0.2" opacity="0.4">
+        <line x1="-165" y1="-80" x2="165" y2="-80"/>
+        <line x1="-165" y1="-40" x2="165" y2="-40"/>
+        <line x1="-165" y1="0" x2="165" y2="0"/>
+        <line x1="-165" y1="40" x2="165" y2="40"/>
+        <line x1="-165" y1="80" x2="165" y2="80"/>
+      </g>
+    </g>
+    
+    <rect x="-30" y="-30" width="60" height="60" rx="4" fill="#1a1a1a"/>
+    <rect x="-25" y="-25" width="50" height="50" rx="3" fill="#0f0f0f"/>
+    <circle cx="0" cy="0" r="15" fill="#1a1a1a"/>
+    <circle cx="0" cy="0" r="10" fill="#0f0f0f"/>
+    <circle cx="0" cy="0" r="5" fill="#FFAC1C" opacity="0.8">
+      <animate attributeName="opacity" values="0.8;1;0.8" dur="2s" repeatCount="indefinite"/>
+    </circle>
+    
+    <text x="0" y="80" font-family="system-ui, sans-serif" font-size="10" fill="#666" text-anchor="middle">900×400mm • Stitched Edge</text>
+  </g>
+  
+  <text x="380" y="285" font-family="system-ui, sans-serif" font-size="10" fill="#aaa" text-anchor="end" opacity="0.3">Meridian</text>
+</svg>

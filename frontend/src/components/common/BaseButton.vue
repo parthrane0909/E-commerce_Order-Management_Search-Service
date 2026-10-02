@@ -22,8 +22,6 @@
 <script setup>
 import AppIcon from './AppIcon.vue'
 
-// Single root element: class/style/listeners from the parent fall through and
-// merge with the button's own classes automatically.
 const props = defineProps({
   variant: { type: String, default: 'primary' },
   size: { type: String, default: 'md' },
@@ -55,13 +53,19 @@ const props = defineProps({
     box-shadow var(--transition);
 }
 
+.btn--lg {
+  height: 44px;
+  padding: 0 var(--space-6);
+  font-size: var(--text-md);
+}
+
 .btn--md {
   height: 38px;
   padding: 0 var(--space-4);
 }
 
 .btn--sm {
-  height: 30px;
+  height: 32px;
   padding: 0 var(--space-3);
   font-size: var(--text-sm);
 }
@@ -82,62 +86,122 @@ const props = defineProps({
 /* ---------------- variants ---------------- */
 
 .btn--primary {
-  background: var(--accent);
-  color: var(--on-accent);
-  box-shadow: var(--shadow-1);
+  background: var(--color-primary);
+  color: var(--color-on-primary);
+  box-shadow: var(--shadow-sm);
 }
 
 .btn--primary:hover:not(:disabled) {
-  background: var(--accent-hover);
+  background: var(--color-primary-hover);
+  box-shadow: var(--shadow-md);
 }
 
 .btn--primary:active:not(:disabled) {
-  background: var(--accent-active);
+  background: var(--color-primary-active);
+  box-shadow: var(--shadow-sm);
+}
+
+.btn--primary:focus-visible {
+  outline: none;
+  box-shadow: var(--shadow-sm), var(--focus-ring);
 }
 
 .btn--secondary {
-  background: var(--surface);
-  border-color: var(--border-strong);
-  color: var(--text);
+  background: var(--color-surface);
+  border-color: var(--color-border-strong);
+  color: var(--color-text);
 }
 
 .btn--secondary:hover:not(:disabled) {
-  background: var(--surface-2);
-  border-color: var(--border-strong);
+  background: var(--color-surface-hover);
+  border-color: var(--color-border-strong);
 }
 
 .btn--secondary:active:not(:disabled) {
-  background: var(--surface-3);
+  background: var(--color-border);
+}
+
+.btn--secondary:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
 }
 
 .btn--ghost {
   background: transparent;
-  color: var(--text-muted);
+  color: var(--color-text-muted);
 }
 
 .btn--ghost:hover:not(:disabled) {
-  background: var(--surface-2);
-  color: var(--text);
+  background: var(--color-surface-hover);
+  color: var(--color-text);
+}
+
+.btn--ghost:active:not(:disabled) {
+  background: var(--color-border);
+}
+
+.btn--ghost:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
 }
 
 .btn--danger {
-  background: var(--danger);
-  color: var(--on-accent);
+  background: var(--color-danger);
+  color: var(--color-on-primary);
+  box-shadow: var(--shadow-sm);
 }
 
 .btn--danger:hover:not(:disabled) {
-  background: var(--danger-hover);
+  background: var(--color-danger-hover);
+  box-shadow: var(--shadow-md);
+}
+
+.btn--danger:active:not(:disabled) {
+  background: var(--color-danger-hover);
+  box-shadow: var(--shadow-sm);
+}
+
+.btn--danger:focus-visible {
+  outline: none;
+  box-shadow: var(--shadow-sm), 0 0 0 3px rgba(198, 40, 40, 0.35);
+}
+
+.btn--teal {
+  background: var(--color-teal);
+  color: var(--color-on-primary);
+  box-shadow: var(--shadow-sm);
+}
+
+.btn--teal:hover:not(:disabled) {
+  background: var(--color-teal-hover);
+  box-shadow: var(--shadow-md);
+}
+
+.btn--teal:active:not(:disabled) {
+  background: var(--color-teal-hover);
+  box-shadow: var(--shadow-sm);
+}
+
+.btn--teal:focus-visible {
+  outline: none;
+  box-shadow: var(--shadow-sm), var(--focus-ring-teal);
 }
 
 .btn--link {
   background: transparent;
-  color: var(--accent-text);
+  color: var(--color-primary);
   height: auto;
   padding: 0;
 }
 
 .btn--link:hover:not(:disabled) {
   text-decoration: underline;
+}
+
+.btn--link:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+  border-radius: var(--radius-sm);
 }
 
 /* ---------------- loading ---------------- */
@@ -154,6 +218,14 @@ const props = defineProps({
 @keyframes btn-spin {
   to {
     transform: rotate(360deg);
+  }
+}
+
+/* Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  .btn__spinner {
+    animation-duration: 0.01ms;
+    animation-iteration-count: 1;
   }
 }
 </style>

@@ -1,13 +1,14 @@
-const formatter = new Intl.NumberFormat('en-US', {
+/** Indian Rupee currency formatting. */
+const formatter = new Intl.NumberFormat('en-IN', {
   style: 'currency',
-  currency: 'USD',
+  currency: 'INR',
   minimumFractionDigits: 2,
   maximumFractionDigits: 2,
 })
 
-const numberFormatter = new Intl.NumberFormat('en-US')
+const numberFormatter = new Intl.NumberFormat('en-IN')
 
-/** `$1,234.56` — returns an em dash for anything that is not a finite number. */
+/** `₹1,234.56` — returns an em dash for anything that is not a finite number. */
 export function formatCurrency(value) {
   if (value === null || value === undefined || value === '') return '—'
   const amount = Number(value)
@@ -15,7 +16,7 @@ export function formatCurrency(value) {
   return formatter.format(amount)
 }
 
-/** `1,234` */
+/** `1,23,456` (Indian numbering system) */
 export function formatNumber(value) {
   if (value === null || value === undefined || value === '') return '—'
   const amount = Number(value)

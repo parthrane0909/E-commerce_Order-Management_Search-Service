@@ -2,20 +2,34 @@
   <div class="checkout">
     <OrderSuccessPanel v-if="placedOrder" :order="placedOrder" @continue="continueShopping" />
 
-    <div v-else-if="cart.isEmpty" class="checkout__empty">
-      <EmptyState
-        icon="bag"
-        title="Your cart is empty"
-        message="Add a few products from the catalog before heading to checkout."
-      >
-        <template #actions>
-          <BaseButton icon="arrowLeft" @click="goToStore">Back to the store</BaseButton>
-        </template>
-      </EmptyState>
-    </div>
-
     <template v-else>
-      <div class="checkout__grid">
+      <header class="checkout__head">
+        <div>
+          <p class="checkout__eyebrow">Order review</p>
+          <h1 class="checkout__title">Checkout</h1>
+        </div>
+        <p class="checkout__meta">
+          <template v-if="cart.isEmpty">Nothing to place yet.</template>
+          <template v-else>
+            <span class="tabular">{{ cart.itemCount }}</span>
+            {{ cart.itemCount === 1 ? 'item' : 'items' }} · prices are re-confirmed by the server
+          </template>
+        </p>
+      </header>
+
+      <div v-if="cart.isEmpty" class="checkout__empty">
+        <EmptyState
+          icon="bag"
+          title="Your cart is empty"
+          message="Add a few products from the catalog before heading to checkout."
+        >
+          <template #actions>
+            <BaseButton icon="arrowLeft" @click="goToStore">Back to the store</BaseButton>
+          </template>
+        </EmptyState>
+      </div>
+
+      <div v-else class="checkout__grid">
         <div class="checkout__main">
           <AppCard title="Order information" :subtitle="`${cart.itemCount} items in this order`">
             <div class="checkout__customer">
@@ -113,6 +127,7 @@ const rows = computed(() =>
       title: info?.ok && info.title ? info.title : line.title,
       sku: (info?.ok && info.sku) || line.sku,
       category: (info?.ok && info.category) || line.category,
+      image_url: info?.ok && info.image_url ? info.image_url : line.image_url,
       quantity: line.quantity,
       unitPrice,
       lineTotal: unitPrice * line.quantity,
@@ -169,6 +184,7 @@ async function loadPrices() {
           title: product.title,
           sku: product.sku,
           category: product.category,
+          image_url: product.image_url,
           active: product.active !== false,
         }
         if (product.active === false) unavailableTitles.push(product.title)
@@ -227,6 +243,38 @@ function continueShopping() {
   display: flex;
   flex-direction: column;
   gap: var(--space-5);
+}
+
+.checkout__head {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: var(--space-4);
+  flex-wrap: wrap;
+}
+
+.checkout__eyebrow {
+  margin: 0 0 var(--space-1);
+  font-size: var(--text-xs);
+  font-weight: var(--fw-bold);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--color-primary-hover);
+}
+
+.checkout__title {
+  margin: 0;
+  font-size: var(--text-3xl);
+  font-weight: var(--fw-bold);
+  letter-spacing: -0.02em;
+  line-height: 1.15;
+  color: var(--color-text);
+}
+
+.checkout__meta {
+  margin: 0;
+  font-size: var(--text-sm);
+  color: var(--color-text-muted);
 }
 
 .checkout__empty {

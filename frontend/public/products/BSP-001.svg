@@ -1,0 +1,57 @@
+<svg width="400" height="300" viewBox="0 0 400 300" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bg21" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#f8f0f0"/>
+      <stop offset="100%" style="stop-color:#f0e0e0"/>
+    </linearGradient>
+    <filter id="shadow21" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="4" stdDeviation="8" flood-color="#000000" flood-opacity="0.1"/>
+    </filter>
+  </defs>
+  <rect width="400" height="300" fill="url(#bg21)"/>
+  
+  <!-- Portable Bluetooth Speaker -->
+  <g transform="translate(200, 150)" filter="url(#shadow21)">
+    <!-- Speaker body -->
+    <rect x="-70" y="-60" width="140" height="120" rx="12" fill="#1a1a1a"/>
+    <rect x="-65" y="-55" width="130" height="110" rx="10" fill="#0f0f0f"/>
+    
+    <!-- Speaker grille -->
+    <g fill="#333">
+      <rect x="-55" y="-45" width="110" height="90" rx="6" fill="none" stroke="#333" stroke-width="0.5"/>
+      <g stroke="#333" stroke-width="0.3" opacity="0.4">
+        <line x1="-50" y1="-40" x2="50" y2="-40"/>
+        <line x1="-50" y1="-20" x2="50" y2="-20"/>
+        <line x1="-50" y1="0" x2="50" y2="0"/>
+        <line x1="-50" y1="20" x2="50" y2="20"/>
+        <line x1="-50" y1="40" x2="50" y2="40"/>
+      </g>
+    </g>
+    
+    <!-- Drivers visible through grille -->
+    <g fill="#1a1a1a">
+      <circle cx="-25" cy="-10" r="18"/>
+      <circle cx="25" cy="-10" r="18"/>
+      <circle cx="0" cy="20" r="22"/>
+    </g>
+    
+    <!-- Passive radiators -->
+    <ellipse cx="0" cy="-70" rx="25" ry="8" fill="#1a1a1a"/>
+    <ellipse cx="0" cy="60" rx="25" ry="8" fill="#1a1a1a"/>
+    
+    <!-- Controls -->
+    <g fill="#FFAC1C" opacity="0.8">
+      <circle cx="-40" cy="55" r="6"/>
+      <circle cx="0" cy="55" r="6">
+        <animate attributeName="opacity" values="0.8;1;0.8" dur="2s" repeatCount="indefinite"/>
+      </circle>
+      <circle cx="40" cy="55" r="6"/>
+    </g>
+    
+    <!-- Strap -->
+    <path d="M -70 -70 Q -100 -90 -100 -70 Q -100 -50 -70 -50" 
+          stroke="#FFAC1C" stroke-width="4" fill="none" stroke-linecap="round" opacity="0.6"/>
+  </g>
+  
+  <text x="380" y="285" font-family="system-ui, sans-serif" font-size="10" fill="#aaa" text-anchor="end" opacity="0.3">Meridian</text>
+</svg>

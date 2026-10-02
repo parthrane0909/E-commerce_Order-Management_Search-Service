@@ -21,10 +21,10 @@ defineProps({
 
 <style scoped>
 .kpi {
-  background: var(--surface);
-  border: 1px solid var(--border);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
   border-radius: var(--radius);
-  box-shadow: var(--shadow-1);
+  box-shadow: var(--shadow-sm);
   padding: var(--space-4);
   display: flex;
   flex-direction: column;
@@ -37,7 +37,7 @@ defineProps({
   font-weight: var(--fw-semibold);
   letter-spacing: 0.04em;
   text-transform: uppercase;
-  color: var(--text-muted);
+  color: var(--color-text-muted);
 }
 
 .kpi__value {
@@ -46,26 +46,31 @@ defineProps({
   line-height: 1.15;
   letter-spacing: -0.01em;
   overflow: hidden;
+  color: var(--color-text);
 }
 
 .kpi__caption {
   font-size: var(--text-xs);
-  color: var(--text-faint);
+  color: var(--color-text-faint);
 }
 
-.kpi--accent .kpi__value {
-  color: var(--accent-text);
+.kpi--primary .kpi__value {
+  color: var(--color-primary-hover);
+}
+
+.kpi--teal .kpi__value {
+  color: var(--color-teal);
 }
 
 .kpi--warning .kpi__value {
-  color: var(--warning);
-}
-
-.kpi--info .kpi__value {
-  color: var(--info);
+  color: var(--color-warning);
 }
 
 .kpi--success .kpi__value {
-  color: var(--success);
+  color: var(--color-success);
+}
+
+.kpi--danger .kpi__value {
+  color: var(--color-danger);
 }
 </style>

@@ -5,11 +5,14 @@ import axios from 'axios'
  * `VITE_API_BASE_URL || 'http://localhost:8000'` — setting it to an empty
  * string makes the app use relative /api requests (vite/nginx proxy).
  */
-function resolveBaseUrl() {
+export function resolveBaseUrl() {
   const configured = import.meta.env.VITE_API_BASE_URL
   if (configured === '') return ''
   return (configured || 'http://localhost:8000').replace(/\/+$/, '')
 }
+
+/** Resolved API origin, e.g. `http://localhost:8000` or `''` for relative. */
+export const API_BASE_URL = resolveBaseUrl()
 
 /** Error surfaced by the API layer — always carries a human readable message. */
 export class ApiError extends Error {
